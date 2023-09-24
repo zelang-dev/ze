@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 #include "test_assert.h"
 

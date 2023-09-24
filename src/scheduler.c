@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 /* Store/hold the registers of the default coroutine thread state,
 allows the ability to switch from any function, non coroutine context. */

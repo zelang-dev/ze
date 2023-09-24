@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 /*
 Small future and promise library in C with pthreads
 

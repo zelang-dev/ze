@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 static void_t fs_init(void_t);
 
@@ -198,11 +198,11 @@ static void_t fs_init(void_t uv_args) {
                 break;
             case UV_FS_READ:
                 offset = var_long_long(args[1]);
-                bufs = var_cast_ptr(uv_buf_t, args[2]);
+                bufs = var_cast(uv_buf_t, args[2]);
                 result = uv_fs_read(loop, req, fd, bufs, 1, offset, fs_cb);
                 break;
             case UV_FS_WRITE:
-                bufs = var_cast_ptr(uv_buf_t, args[1]);
+                bufs = var_cast(uv_buf_t, args[1]);
                 offset = var_long_long(args[2]);
                 result = uv_fs_write(loop, req, fd, bufs, 1, offset, fs_cb);
                 break;
@@ -216,7 +216,7 @@ static void_t fs_init(void_t uv_args) {
 
     if (result) {
         fprintf(stderr, "failed: %s\n", uv_strerror(result));
-        return CO_ERROR;
+        return ZE_ERROR;
     }
 
     fs->context = co_active();

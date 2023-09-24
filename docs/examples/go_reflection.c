@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 /* converted from https://www.geeksforgeeks.org/reflection-in-golang/ */
 
@@ -6,7 +6,7 @@
 // Type and Kind and to demonstrate use of
 // Methods provided by Go reflect Package
 
-reflect_struct(details,
+ze_struct(details,
                (STRING, string, fname),
                (STRING, string, lname),
                (INTEGER, int, age),

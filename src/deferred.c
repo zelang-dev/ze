@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int co_array_init(co_array_t *a) {
     if (UNLIKELY(!a))

@@ -1,5 +1,5 @@
 
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int co_main(int argc, char **argv) {
     array_t *list = array_str(2, "Hello", "World");

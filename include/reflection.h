@@ -1,24 +1,14 @@
-#ifndef REFLECT_H_
-#define REFLECT_H_
+#ifndef REFLECTION_H_
+#define REFLECTION_H_
+
+#include "../include/coroutine.h"
 
 /*
- * Modified from:
+ * A reflection library for C
  *
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * <marcin.kolny@gmail.com> wrote this file. As long as you retain this notice
- * you can do whatever you want with this stuff. If we meet some day, and you
- * think this stuff is worth it, you can buy me a beer in return. Marcin Kolny
- * http://github.com/loganek/mkcreflect
+ * Modified from: https://github.com/loganek/mkcreflect
  * ----------------------------------------------------------------------------
  */
-
-#include <stddef.h>
-#include <stdbool.h>
-
-#ifndef C_API
-    #define C_API extern
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -283,6 +273,19 @@ typedef struct reflect_type_s {
     RE_DEFINE_PROTO(TYPE_NAME) \
     RE_DEFINE_METHOD(TYPE_NAME, __VA_ARGS__)
 
+C_API value_types type_of(void_t);
+C_API bool is_type(void_t, value_types);
+C_API bool is_instance_of(void_t, void_t);
+C_API bool is_value(void_t);
+C_API bool is_instance(void_t);
+C_API bool is_valid(void_t);
+C_API bool is_reflection(void_t self);
+
+C_API string_t reflect_kind(void_t);
+C_API void reflect_set_field(reflect_type_t *, int, void_t value);
+C_API void reflect_get_field(reflect_type_t *, int, void_t out);
+C_API void reflect_with(reflect_type_t *, void_t value);
+
 C_API size_t reflect_num_fields(reflect_type_t *type);
 C_API const char *reflect_type_of(reflect_type_t *type);
 C_API reflect_types reflect_type_enum(reflect_type_t *type);
@@ -302,4 +305,4 @@ C_API reflect_types reflect_field_enum(reflect_type_t *, int);
 }
 #endif
 
-#endif /* REFLECT_H_ */
+#endif /* REFLECTION_H_ */

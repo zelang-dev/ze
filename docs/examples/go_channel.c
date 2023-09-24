@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 void *sendData(void *arg) {
     channel_t *ch = (channel_t *)arg;

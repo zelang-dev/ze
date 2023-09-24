@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 CO_FORCE_INLINE value_types type_of(void_t self) {
     return ((var_t *)self)->type;
@@ -182,37 +182,37 @@ CO_FORCE_INLINE void reflect_get_field(reflect_type_t *variable, int slot, void_
 }
 
 
-reflect_func(var_t,
+ze_func(var_t,
              (PTR, void_t, value)
 )
-reflect_func(co_array_t,
+ze_func(co_array_t,
              (PTR, void_t, base), (MAXSIZE, size_t, elements)
 )
-reflect_func(defer_t,
+ze_func(defer_t,
              (STRUCT, co_array_t, base)
 )
-reflect_func(defer_func_t,
+ze_func(defer_func_t,
              (FUNC, func_t, func), (PTR, void_t, data), (PTR, void_t, check)
 )
-reflect_func(promise,
+ze_func(promise,
              (STRUCT, co_value_t *, result), (STRUCT, pthread_mutex_t, mutex),
              (STRUCT, pthread_cond_t, cond),
              (BOOL, bool, done),
              (INTEGER, int, id)
 )
-reflect_func(future,
+ze_func(future,
              (STRUCT, pthread_t, thread), (STRUCT, pthread_attr_t, attr),
              (FUNC, callable_t, func),
              (INTEGER, int, id),
              (STRUCT, promise *, value)
 )
-reflect_func(future_arg,
+ze_func(future_arg,
              (FUNC, callable_t, func), (PTR, void_t, arg), (STRUCT, promise *, value)
 )
-reflect_func(co_scheduler_t,
+ze_func(co_scheduler_t,
              (STRUCT, co_routine_t *, head), (STRUCT, co_routine_t *, tail)
 )
-reflect_func(uv_args_t,
+ze_func(uv_args_t,
              (STRUCT, co_value_t *, args),
              (STRUCT, co_routine_t *, context),
              (BOOL, bool, is_path),
@@ -225,7 +225,7 @@ reflect_func(uv_args_t,
              (ENUM, uv_errno_t, errno_code),
              (MAXSIZE, size_t, n_args)
 )
-reflect_func(channel_t,
+ze_func(channel_t,
              (UINT, unsigned int, bufsize),
              (UINT, unsigned int, elem_size),
              (UCHAR_P, unsigned char *, buf),
@@ -238,14 +238,14 @@ reflect_func(channel_t,
              (STRING, string, name),
              (BOOL, bool, select_ready)
 )
-reflect_func(array_item_t,
+ze_func(array_item_t,
              (STRUCT, map_value_t *, value),
              (STRUCT, array_item_t *, prev),
              (STRUCT, array_item_t *, next),
              (LLONG, int64_t, indic),
              (CONST_CHAR, string_t, key)
 )
-reflect_func(map_t,
+ze_func(map_t,
              (STRUCT, array_item_t *, head),
              (STRUCT, array_item_t *, tail),
              (STRUCT, ht_map_t *, dict),
@@ -259,17 +259,17 @@ reflect_func(map_t,
              (BOOL, bool, started),
              (BOOL, bool, sliced)
 )
-reflect_func(map_iter_t,
+ze_func(map_iter_t,
              (STRUCT, map_t *, array),
              (STRUCT, array_item_t *, item),
              (BOOL, bool, forward)
 )
-reflect_func(ex_ptr_t,
+ze_func(ex_ptr_t,
              (STRUCT, ex_ptr_t *, next),
              (FUNC, func_t, func),
              (OBJ, void_t *, ptr)
 )
-reflect_func(ex_context_t,
+ze_func(ex_context_t,
              (STRUCT, ex_context_t *, next),
              (STRUCT, ex_ptr_t *, stack),
              (STRUCT, co_routine_t *, co),
@@ -280,7 +280,7 @@ reflect_func(ex_context_t,
              (INTEGER, int volatile, state),
              (INTEGER, int, unstack)
 )
-reflect_func(object_t,
+ze_func(object_t,
              (PTR, void_t, value),
              (FUNC, func_t, dtor)
 )

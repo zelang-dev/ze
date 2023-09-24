@@ -1,7 +1,7 @@
 #ifndef ZE_LANG_H_
 #define ZE_LANG_H_
 
-#include "../include/coroutine.h"
+#include "../include/reflection.h"
 
 #define try ex_try
 #define catch_any ex_catch_any
@@ -222,7 +222,7 @@ Must also closed out with `select_break()`. */
 #define as_array_long(variable, n_of_items, ...) array_t *variable = array_long(n_of_items, __VA_ARGS__); \
     defer(map_free, variable)
 
-#define as_array_string(variable, n_of_items, ...) array_t *variable = array_str(n_of_items, __VA_ARGS__); \
+#define as_array_str(variable, n_of_items, ...) array_t *variable = array_str(n_of_items, __VA_ARGS__); \
     defer(map_free, variable)
 
 #define as_slice(variable, list, start, end) slice_t *variable = slice(list, start, end);

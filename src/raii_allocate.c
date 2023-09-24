@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 static thread_local gc_channel_t *channel_list = NULL;
 static thread_local gc_coroutine_t *coroutine_list = NULL;

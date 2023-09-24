@@ -1,8 +1,8 @@
-# c-coroutine
+# ze is c
 
-[![windows & linux & macOS](https://github.com/symplely/c-coroutine/actions/workflows/ci.yml/badge.svg)](https://github.com/symplely/c-coroutine/actions/workflows/ci.yml)[![macOS](https://github.com/symplely/c-coroutine/actions/workflows/ci_macos.yml/badge.svg)](https://github.com/symplely/c-coroutine/actions/workflows/ci_macos.yml)[![armv7, aarch64, ppc64le](https://github.com/symplely/c-coroutine/actions/workflows/ci_qemu_others.yml/badge.svg)](https://github.com/symplely/c-coroutine/actions/workflows/ci_qemu_others.yml)[![riscv64 & s390x by ucontext  .](https://github.com/symplely/c-coroutine/actions/workflows/ci_qemu.yml/badge.svg)](https://github.com/symplely/c-coroutine/actions/workflows/ci_qemu.yml)
+[![windows & linux & macOS](https://github.com/zelang-dev/ze/actions/workflows/ci.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci.yml)[![macOS](https://github.com/zelang-dev/ze/actions/workflows/ci_macos.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci_macos.yml)[![armv7, aarch64, ppc64le](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu_others.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu_others.yml)[![riscv64 & s390x by ucontext  .](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu.yml)
 
-**c-coroutine** is a cooperative multithreading library written in C89. Designed to be simple as possible in usage, but powerfully enough in execution, easily modifiable to any need. It incorporates most asynchronous patterns from various languages. They all the same behaviorally, just syntax layout differences.
+**ze** is a cooperative multithreading library written in C89. Designed to be simple as possible in usage, but powerfully enough in execution, easily modifiable to any need. It incorporates most asynchronous patterns from various languages. They all the same behaviorally, just syntax layout differences.
 
 This library was initially a rework/refactor and merge of [libco](https://github.com/higan-emu/libco) with [minicoro](https://github.com/edubart/minicoro). These two differ among many [coru](https://github.com/geky/coru), [libdill](https://github.com/sustrik/libdill), [libmill](https://github.com/sustrik/libmill), [libwire](https://github.com/baruch/libwire), [libcoro](https://github.com/semistrict/libcoro), [libcsp](https://github.com/shiyanhui/libcsp), [dyco-coroutine](https://github.com/piaodazhu/dyco-coroutine), in that Windows is supported, and not using **ucontext**. That was until I came across [libtask](https://swtch.com/libtask), where the design is the underpinning of GoLang, and made it Windows compatible in an fork [symplely/libtask](https://github.com/symplely/libtask). **Libtask** has it's channel design origins from [Richard Beton's libcsp](https://libcsp.sourceforge.net/)
 
@@ -164,7 +164,7 @@ typedef struct co_value
 C_API value_t co_value(void_t);
 ```
 
-The above is the **main** and most likely functions to be used, see [coroutine.h](https://github.com/symplely/c-coroutine/blob/main/include/coroutine.h) for additional.
+The above is the **main** and most likely functions to be used, see [ze.h](https://github.com/zelang-dev/ze/blob/main/include/ze.h) for additional.
 
 > Note: None of the functions above require passing/handling the underlying `co_routine_t` object/structure.
 
@@ -209,7 +209,7 @@ func greetings(name string) {
 <td>
 
 ```c
-# include "../include/coroutine.h"
+# include "../include/ze.h"
 
 void_t greetings(void_t arg)
 {
@@ -277,7 +277,7 @@ func sendData(ch chan string) {
 <td>
 
 ```c
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 void_t sendData(void_t arg)
 {
@@ -353,7 +353,7 @@ func main() {
 <td>
 
 ```c
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int fibonacci(channel_t *c, channel_t *quit)
 {
@@ -450,7 +450,7 @@ func divByZero() {
 <td>
 
 ```c
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int div_err(int x, int y)
 {
@@ -538,7 +538,7 @@ func main() {
 <td>
 
 ```c
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 void_t worker(void_t arg)
 {
@@ -633,7 +633,7 @@ int main ()
 <p>
 
 ```c
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 // a non-optimized way of checking for prime numbers:
 void_t is_prime(void_t arg)
@@ -673,13 +673,13 @@ int co_main(int argc, char **argv)
 </tr>
 </table>
 
-### See [examples](https://github.com/symplely/c-coroutine/tree/main/examples) folder for more
+### See [examples](https://github.com/zelang-dev/ze/tree/main/examples) folder for more
 
 ## Installation
 
 ## Contributing
 
-Contributions are encouraged and welcome; I am always happy to get feedback or pull requests on Github :) Create [Github Issues](https://github.com/symplely/c-coroutine/issues) for bugs and new features and comment on the ones you are interested in.
+Contributions are encouraged and welcome; I am always happy to get feedback or pull requests on Github :) Create [Github Issues](https://github.com/zelang-dev/ze/issues) for bugs and new features and comment on the ones you are interested in.
 
 ## License
 

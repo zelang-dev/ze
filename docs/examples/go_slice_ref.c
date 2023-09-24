@@ -1,8 +1,8 @@
 
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int co_main(int argc, char **argv) {
-    as_array_string(names, 4, "John", "Paul", "George", "Ringo");
+    as_array_str(names, 4, "John", "Paul", "George", "Ringo");
 
     println(1, names);
 
