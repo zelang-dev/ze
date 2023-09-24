@@ -1,6 +1,6 @@
-# Manual
+# manual
 
-**c-coroutine** is a cooperative multithreading library written in C89. Designed to be simple as possible in usage, but powerfully enough in execution, easily modifiable to any need. It incorporates most asynchronous patterns from various languages. They all the same behaviorally, just syntax layout differences.
+**ze** is a cooperative multithreading library written in C89. Designed to be simple as possible in usage, but powerfully enough in execution, easily modifiable to any need. It incorporates most asynchronous patterns from various languages. They all the same behaviorally, just syntax layout differences.
 
 This library was initially a rework/refactor and merge of [libco](https://github.com/higan-emu/libco) with [minicoro](https://github.com/edubart/minicoro). These two differ among many [coru](https://github.com/geky/coru), [libdill](https://github.com/sustrik/libdill), [libmill](https://github.com/sustrik/libmill), [libwire](https://github.com/baruch/libwire), [libcoro](https://github.com/semistrict/libcoro), [libcsp](https://github.com/shiyanhui/libcsp), [dyco-coroutine](https://github.com/piaodazhu/dyco-coroutine), in that Windows is supported, and not using **ucontext**. That was until I came across [libtask](https://swtch.com/libtask), where the design is the underpinning of GoLang, and made it Windows compatible in an fork [symplely/libtask](https://github.com/symplely/libtask). **Libtask** has it's channel design origins from [Richard Beton's libcsp](https://libcsp.sourceforge.net/)
 
@@ -162,7 +162,7 @@ typedef struct co_value
 C_API value_t co_value(void_t);
 ```
 
-The above is the **main** and most likely functions to be used, see [coroutine.h](https://github.com/symplely/c-coroutine/blob/main/include/coroutine.h) for additional.
+The above is the **main** and most likely functions to be used, see [ze.h](https://github.com/zelang-dev/ze/blob/main/include/ze.h) for additional.
 
 > Note: None of the functions above require passing/handling the underlying `co_routine_t` object/structure.
 
@@ -204,7 +204,7 @@ func greetings(name string) {
 </td>
 <td>
 <pre><code>
-# include "../include/coroutine.h"
+# include "../include/ze.h"
 
 void_t greetings(void_t arg)
 {
@@ -332,7 +332,7 @@ func sendData(ch chan string) {
 </td>
 <td>
 <pre><code>
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 void_t sendData(void_t arg) {
     channel_t *ch = (channel_t *)arg;
@@ -423,7 +423,7 @@ func main() {
 </td>
 <td>
 <pre><code>
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int fibonacci(channel_t *c, channel_t *quit) {
     int x = 0;
@@ -635,7 +635,7 @@ func divByZero() {
 </td>
 <td>
 <pre><code>
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 int div_err(int x, int y) {
     return x / y;
@@ -731,7 +731,7 @@ func main() {
 </td>
 <td>
 <pre><code>
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 void_t worker(void_t arg) {
     // int id = c_int(arg);
@@ -880,7 +880,7 @@ int main ()
 </td>
 <td>
 <pre><code>
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 // a non-optimized way of checking for prime numbers:
 void_t is_prime(void_t arg) {
@@ -954,13 +954,13 @@ Coroutine scheduler exited
 </pre>
 </details>
 
-### See [examples](https://github.com/symplely/c-coroutine/tree/main/examples) folder for more
+### See [examples](https://github.com/zelang-dev/ze/tree/main/docs/examples) folder for more
 
 ## Installation
 
 ## Contributing
 
-Contributions are encouraged and welcome; I am always happy to get feedback or pull requests on Github :) Create [Github Issues](https://github.com/symplely/c-coroutine/issues) for bugs and new features and comment on the ones you are interested in.
+Contributions are encouraged and welcome; I am always happy to get feedback or pull requests on Github :) Create [Github Issues](https://github.com/zelang-dev/ze/issues) for bugs and new features and comment on the ones you are interested in.
 
 ## License
 
