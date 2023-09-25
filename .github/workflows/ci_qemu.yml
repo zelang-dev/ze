@@ -45,3 +45,5 @@ jobs:
             ./co_cpp_future_wait
             ./go_panic
             ./go_wait_group
+            ./test_map
+            ./test_reflect

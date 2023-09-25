@@ -26,3 +26,5 @@ jobs:
             ./go_select
             ./go_panic
             ./co_cpp_future_wait
+            ./test_map
+            ./test_reflect

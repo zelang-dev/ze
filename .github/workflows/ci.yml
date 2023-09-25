@@ -42,6 +42,8 @@ jobs:
             ./test_delay 2 5
             ./chan_3
             ./primes
+            ./test_map
+            ./test_reflect
 
   build-windows:
     name: Windows (${{ matrix.arch }})
@@ -75,3 +77,5 @@ jobs:
             .\go_panic.exe
             .\co_call_uv.exe
             .\co_cpp_future_wait.exe
+            .\test_map
+            .\test_reflect

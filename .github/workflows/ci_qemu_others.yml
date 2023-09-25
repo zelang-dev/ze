@@ -49,3 +49,5 @@ jobs:
             fi
             ./co_call_uv
             ./co_cpp_future_wait
+            ./test_map
+            ./test_reflect
