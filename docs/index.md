@@ -334,7 +334,7 @@ func sendData(ch chan string) {
 </td>
 <td>
 <pre><code>
-#include "../include/ze.h"
+#include <ze.h>
 
 void_t sendData(void_t arg) {
     channel_t *ch = (channel_t *)arg;
@@ -425,7 +425,7 @@ func main() {
 </td>
 <td>
 <pre><code>
-#include "../include/ze.h"
+#include <ze.h>
 
 int fibonacci(channel_t *c, channel_t *quit) {
     int x = 0;
@@ -637,7 +637,7 @@ func divByZero() {
 </td>
 <td>
 <pre><code>
-#include "../include/ze.h"
+#include <ze.h>
 
 int div_err(int x, int y) {
     return x / y;
@@ -733,7 +733,7 @@ func main() {
 </td>
 <td>
 <pre><code>
-#include "../include/ze.h"
+#include <ze.h>
 
 void_t worker(void_t arg) {
     // int id = c_int(arg);
@@ -882,7 +882,7 @@ int main ()
 </td>
 <td>
 <pre><code>
-#include "../include/ze.h"
+#include <ze.h>
 
 // a non-optimized way of checking for prime numbers:
 void_t is_prime(void_t arg) {
