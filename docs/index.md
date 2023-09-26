@@ -966,4 +966,4 @@ Contributions are encouraged and welcome; I am always happy to get feedback or p
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](../LICENSE.md) for more information.

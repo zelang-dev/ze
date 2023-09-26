@@ -1,29 +1,15 @@
-readme_index:
-  with_frontmatter: true
-
 plugins:
   - jekyll-relative-links
   - jemoji
   - jekyll-avatar
   - jekyll-mentions
+
 relative_links:
   enabled: true
   collections: true
-include:
-  - index.md
-  - home.md
-  - LICENSE.md
-  - ISSUE_TEMPLATE.md
-  - PULL_REQUEST_TEMPLATE.md
-  - examples
 
 remote_theme: rundocs/jekyll-rtd-theme
-theme: null
 syntax_highlighter_style: colorful
-toc:
-    enabled: true
-    h_min: 1
-    h_max: 3
 
 exclude:
   - README.md
