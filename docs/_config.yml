@@ -12,7 +12,7 @@ relative_links:
   collections: true
 
 remote_theme: rundocs/jekyll-rtd-theme
-theme: jekyll-rtd-theme
+theme: null
 syntax_highlighter_style: colorful
 
 translate:
