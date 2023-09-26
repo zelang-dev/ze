@@ -13,7 +13,7 @@ message("Generated with config types: ${CMAKE_CONFIGURATION_TYPES}")
 
 set(BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/ze-built")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libze-built")
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
 option(LIBUV_BUILD_SHARED "Build shared lib" OFF)
