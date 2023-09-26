@@ -27,6 +27,7 @@ toc:
 
 exclude:
   - README.md
+  - LICENSE.md
   - Makefile
   - CMakeLists.txt
   - CNAME

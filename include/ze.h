@@ -160,6 +160,8 @@ throws an exception of given message `issue`. */
 #define or(ENUM) break; case ENUM:
 #define otherwise break; default:
 
+#define loop while(true)
+
 /* The `for_select` macro sets up a coroutine to wait on multiple channel
 operations. Must be closed out with `select_end`, and if no `select_case(channel)`, `select_case_if(channel)`, `select_break` provided, an infinite loop is created.
 
