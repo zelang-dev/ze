@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 
 /* converted from https://www.geeksforgeeks.org/reflection-in-golang/ */
 

@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 
 int div_err(int x, int y) {
     return x / y;

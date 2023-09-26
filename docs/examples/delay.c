@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 
 channel_t *c;
 

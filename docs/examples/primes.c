@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 
 int quiet = 0;
 int goal = 0;

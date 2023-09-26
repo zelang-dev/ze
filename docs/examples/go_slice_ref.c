@@ -1,5 +1,5 @@
 
-#include "../include/ze.h"
+#include <ze.h>
 
 int co_main(int argc, char **argv) {
     as_array_str(names, 4, "John", "Paul", "George", "Ringo");

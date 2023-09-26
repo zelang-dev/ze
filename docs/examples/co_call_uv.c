@@ -1,6 +1,6 @@
 /* *****hello world***** */
 
-#include "../include/coroutine.h"
+#include <ze.h>
 
 int co_main(int argc, char *argv[]) {
     uv_file fd = -1;

@@ -1239,26 +1239,6 @@ C_API gc_coroutine_t *gc_coroutine_list(void);
 C_API void gc_coroutine_free(void);
 C_API void gc_channel_free(void);
 
-typedef struct reflect_value_s {
-    reflect_types type;
-    string_t value_type;
-    string_t name;
-    size_t size;
-    size_t offset;
-    bool is_signed;
-    int array_size;
-} reflect_value_t;
-
-typedef struct reflect_kind_s {
-    reflect_types type;
-    void_t instance;
-    string_t name;
-    size_t num_fields;
-    size_t size;
-    size_t packed_size;
-    reflect_value_t *fields;
-} reflect_kind_t;
-
 /* Write this function instead of `main`, this library provides its own main, the scheduler,
 which call this function as an coroutine! */
 int co_main(int, char **);

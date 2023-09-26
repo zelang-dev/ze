@@ -1,7 +1,7 @@
 #ifndef REFLECTION_H_
 #define REFLECTION_H_
 
-#include "../include/coroutine.h"
+#include "coroutine.h"
 
 /*
  * A reflection library for C
@@ -63,6 +63,26 @@ typedef enum {
     RE_VALUE,
     RE_NO_INSTANCE
 } reflect_types;
+
+typedef struct reflect_value_s {
+    reflect_types type;
+    string_t value_type;
+    string_t name;
+    size_t size;
+    size_t offset;
+    bool is_signed;
+    int array_size;
+} reflect_value_t;
+
+typedef struct reflect_kind_s {
+    reflect_types type;
+    void_t instance;
+    string_t name;
+    size_t num_fields;
+    size_t size;
+    size_t packed_size;
+    reflect_value_t *fields;
+} reflect_kind_t;
 
 typedef struct reflect_field_s {
     reflect_types data_type;

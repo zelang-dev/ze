@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 
 void *worker(void *arg) {
     // int id = c_int(arg);

@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 
 int fibonacci(channel_t *c, channel_t *quit) {
     int x = 0;

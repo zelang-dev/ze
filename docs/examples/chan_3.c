@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include <ze.h>
 void *co_2(void *arg) {
     channel_t *c = (channel_t *)arg;
 

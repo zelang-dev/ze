@@ -1,7 +1,7 @@
 #ifndef ZE_LANG_H_
 #define ZE_LANG_H_
 
-#include "../include/reflection.h"
+#include "reflection.h"
 
 #define try ex_try
 #define catch_any ex_catch_any
