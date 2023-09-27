@@ -1,7 +1,3 @@
----
-sort: 1
----
-
 # Getting Started
 
 * [Installation](#installation)

@@ -218,6 +218,70 @@ int co_main(int argc, char **argv)
 }
 ```
 
+<details>
+<summary>DEBUG run output</summary>
+
+<pre>
+Thread #7f11090f11c0 running coroutine id: 1 () status: 3
+Start of main Goroutine
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 2 () status: 3
+0 ==> John
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 3 () status: 3
+0 ==> Mary
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 () status: 3
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 2
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 2 () status: 1
+1 ==> John
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 3 () status: 1
+1 ==> Mary
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 2
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 2 () status: 1
+2 ==> John
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 3 () status: 1
+2 ==> Mary
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 2
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 2 () status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 3 () status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f11090f11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+...
+...
+...
+...
+Thread #7f6ac8aa11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f6ac8aa11c0 running coroutine id: 4 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f6ac8aa11c0 running coroutine id: 1 (co_main) status: 1
+End of main Goroutine
+Back at coroutine scheduling
+Coroutine scheduler exited
+</pre>
+</details>
+
 </td>
 </tr>
 </table>
@@ -289,6 +353,26 @@ int co_main(int argc, char **argv)
 }
 ```
 
+<details>
+<summary>DEBUG run output</summary>
+
+<pre>
+Thread #7f87171711c0 running coroutine id: 1 () status: 3
+processed
+ r:0x7fffb878dca0
+Back at coroutine scheduling
+Thread #7f87171711c0 running coroutine id: 2 () status: 3
+processed
+ s:0x7fffb878dca0*
+ => s:0x7fffb878dca0
+No receiver! Send Operation Blocked
+Back at coroutine scheduling
+Thread #7f87171711c0 running coroutine id: 1 (co_main) status: 1
+Received. Send Operation Successful
+Back at coroutine scheduling
+Coroutine scheduler exited
+</pre>
+</details>
 </td>
 </tr>
 </table>
@@ -385,6 +469,129 @@ int co_main(int argc, char **argv)
 }
 ```
 
+<details>
+<summary>DEBUG run output</summary>
+
+<pre>
+Thread #7f2dadbb11c0 running coroutine id: 1 () status: 3
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 3
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+0
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+1
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+1
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+2
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+3
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+5
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+8
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+13
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+21
+processed
+ r:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ s:0x7fffc1f35ca0*
+ => s:0x7fffc1f35ca0
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+34
+processed
+ s:0x7fffc1f35f10
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 1 (co_main) status: 1
+processed
+ r:0x7fffc1f35f10*
+ => r:0x7fffc1f35f10
+quit
+Back at coroutine scheduling
+Thread #7f2dadbb11c0 running coroutine id: 2 () status: 1
+Back at coroutine scheduling
+Coroutine scheduler exited
+
+</pre>
+</details>
+
 </td>
 </tr>
 </table>
@@ -468,6 +675,23 @@ int co_main(int argc, char **argv)
     return 0;
 }
 ```
+
+<details>
+<summary>DEBUG run output</summary>
+
+<pre>
+Thread #7fd29c4011c0 running coroutine id: 1 () status: 3
+Back at coroutine scheduling
+Thread #7fd29c4011c0 running coroutine id: 2 () status: 3
+panic occurred: sig_ill
+Back at coroutine scheduling
+Thread #7fd29c4011c0 running coroutine id: 1 (co_main) status: 1
+Although panicked. We recovered. We call mul() func
+mul func result: 50
+Back at coroutine scheduling
+Coroutine scheduler exited
+</pre>
+</details>
 
 </td>
 </tr>
@@ -561,6 +785,72 @@ int co_main(int argc, char **argv)
 }
 ```
 
+<details>
+<summary>DEBUG run output</summary>
+
+<pre>
+Thread #7f48f6c211c0 running coroutine id: 1 () status: 3
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 2 () status: 3
+Worker 2 starting
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 3 () status: 3
+Worker 3 starting
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 4 () status: 3
+Worker 4 starting
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 5 () status: 3
+Worker 5 starting
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 6 () status: 3
+Worker 6 starting
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 7 () status: 3
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 6 () status: 1
+Worker 6 done
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 7 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 5 () status: 1
+Worker 5 done
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 7 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 4 () status: 1
+Worker 4 done
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 7 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 3 () status: 1
+Worker 3 done
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 7 (coroutine_wait) status: 1
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 2 () status: 1
+Worker 2 done
+Back at coroutine scheduling
+Thread #7f48f6c211c0 running coroutine id: 1 (co_main) status: 1
+
+Worker # 4 returned: 32
+
+Worker # 3 returned: hello world
+Back at coroutine scheduling
+Coroutine scheduler exited
+</pre>
+</details>
+
 </td>
 </tr>
 </table>
@@ -651,6 +941,45 @@ int co_main(int argc, char **argv)
     return 0;
 }
 ```
+
+<details>
+<summary>DEBUG run output</summary>
+
+<pre>
+Thread #7fc61b3d11c0 running coroutine id: 1 () status: 3
+promise id(706099430) created in thread #7fc61b3d11c0
+thread #7fc61b3d11c0 created thread #7fc61b2b0700 with status(0) future id(706099430)
+checking...
+Back at coroutine scheduling
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 2
+Back at coroutine scheduling
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+...
+...
+...
+...
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+promise id(706099430) set LOCK in thread #7fc61b2b0700
+promise id(706099430) set UNLOCK in thread #7fc61b2b0700
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+Back at coroutine scheduling
+Thread #7fc61b3d11c0 running coroutine id: 1 (co_main) status: 1
+
+194232491 promise id(706099430) get LOCK in thread #7fc61b3d11c0
+promise id(706099430) get UNLOCK in thread #7fc61b3d11c0
+is prime!
+Back at coroutine scheduling
+Coroutine scheduler exited
+</pre>
+</details>
 
 </p>
 
