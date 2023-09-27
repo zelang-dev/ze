@@ -15,8 +15,7 @@ relative_links:
   enabled: true
   collections: true
 
-remote_theme: rundocs/jekyll-rtd-theme
-theme: null
+remote_theme: olivier3lanc/Jekyll-LibDoc
 syntax_highlighter_style: colorful
 
 translate:
