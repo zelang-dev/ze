@@ -1,1 +1,3 @@
-# Memory Safety - Automatic or Semi
+# Memory Safety
+
+## Automatic or Semi
