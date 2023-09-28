@@ -1,4 +1,4 @@
-# `Ze` the missing `C` runtime.
+# Ze is C, the missing C runtime
 
 ## Background
 
