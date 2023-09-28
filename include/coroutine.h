@@ -34,7 +34,7 @@
 #include <time.h>
 
 #if defined(_MSC_VER)
-    #define CO_MPROTECT 1
+    #define ZE_MPROTECT 1
     #define S_IRUSR S_IREAD  /* read, user */
     #define S_IWUSR S_IWRITE /* write, user */
     #define S_IXUSR 0 /* execute, user */
@@ -52,33 +52,33 @@
     #endif
 #endif
 
-#ifdef CO_DEBUG
-    #define CO_LOG(s) puts(s)
-    #define CO_INFO(s, ...) printf(s, __VA_ARGS__ )
-    #define CO_HERE() fprintf(stderr, "Here %s:%d\n", __FILE__, __LINE__)
+#ifdef ZE_DEBUG
+    #define ZE_LOG(s) puts(s)
+    #define ZE_INFO(s, ...) printf(s, __VA_ARGS__ )
+    #define ZE_HERE() fprintf(stderr, "Here %s:%d\n", __FILE__, __LINE__)
 #else
-    #define CO_LOG(s)
-    #define CO_INFO(s, ...)
-    #define CO_HERE()
+    #define ZE_LOG(s)
+    #define ZE_INFO(s, ...)
+    #define ZE_HERE()
 #endif
 
 /* Stack size when creating a coroutine. */
-#ifndef CO_STACK_SIZE
-    #define CO_STACK_SIZE (10 * 1024)
+#ifndef ZE_STACK_SIZE
+    #define ZE_STACK_SIZE (10 * 1024)
 #endif
 
-#ifndef CO_MAIN_STACK
-    #define CO_MAIN_STACK (64 * 1024)
+#ifndef ZE_MAIN_STACK
+    #define ZE_MAIN_STACK (64 * 1024)
 #endif
 
-#ifndef CO_SCRAPE_SIZE
-    #define CO_SCRAPE_SIZE (2 * 64)
+#ifndef ZE_SCRAPE_SIZE
+    #define ZE_SCRAPE_SIZE (2 * 64)
 #endif
 
 #if defined(UV_H)
-    #define CO_EVENT_LOOP(h, m) uv_run(h, m)
-#elif !defined(CO_EVENT_LOOP)
-    #define CO_EVENT_LOOP(h, m)
+    #define ZE_EVENT_LOOP(h, m) uv_run(h, m)
+#elif !defined(ZE_EVENT_LOOP)
+    #define ZE_EVENT_LOOP(h, m)
 #endif
 
 /* Public API qualifier. */
@@ -86,29 +86,29 @@
     #define C_API extern
 #endif
 
-#ifndef CO_ASSERT
-  #if defined(CO_DEBUG)
+#ifndef ZE_ASSERT
+  #if defined(ZE_DEBUG)
     #include <assert.h>
-    #define CO_ASSERT(c) assert(c)
+    #define ZE_ASSERT(c) assert(c)
   #else
-    #define CO_ASSERT(c)
+    #define ZE_ASSERT(c)
   #endif
 #endif
 
 /*[amd64, arm, ppc, x86]:
    by default, co_swap_function is marked as a text (code) section
    if not supported, uncomment the below line to use mprotect instead */
-/* #define CO_MPROTECT */
+/* #define ZE_MPROTECT */
 
 /*[amd64]:
    Win64 only: provides a substantial speed-up, but will thrash XMM regs
    do not use this unless you are certain your application won't use SSE */
-/* #define CO_NO_SSE */
+/* #define ZE_NO_SSE */
 
 /*[amd64, aarch64]:
    Win64 only: provides a small speed-up, but will break stack unwinding
    do not use this if your application uses exceptions or setjmp/longjmp */
-/* #define CO_NO_TIB */
+/* #define ZE_NO_TIB */
 
 #if !defined(thread_local) /* User can override thread_local for obscure compilers */
      /* Running in multi-threaded environment */
@@ -141,29 +141,29 @@
     #endif
 #endif
 
-#ifndef CO_FORCE_INLINE
+#ifndef ZE_FORCE_INLINE
   #ifdef _MSC_VER
-    #define CO_FORCE_INLINE __forceinline
+    #define ZE_FORCE_INLINE __forceinline
   #elif defined(__GNUC__)
     #if defined(__STRICT_ANSI__)
-      #define CO_FORCE_INLINE __inline__ __attribute__((always_inline))
+      #define ZE_FORCE_INLINE __inline__ __attribute__((always_inline))
     #else
-      #define CO_FORCE_INLINE inline __attribute__((always_inline))
+      #define ZE_FORCE_INLINE inline __attribute__((always_inline))
     #endif
   #elif defined(__BORLANDC__) || defined(__DMC__) || defined(__SC__) || defined(__WATCOMC__) || defined(__LCC__) ||  defined(__DECC)
-    #define CO_FORCE_INLINE __inline
+    #define ZE_FORCE_INLINE __inline
   #else /* No inline support. */
-    #define CO_FORCE_INLINE
+    #define ZE_FORCE_INLINE
   #endif
 #endif
 
-#ifndef CO_NO_INLINE
+#ifndef ZE_NO_INLINE
   #ifdef __GNUC__
-    #define CO_NO_INLINE __attribute__((noinline))
+    #define ZE_NO_INLINE __attribute__((noinline))
   #elif defined(_MSC_VER)
-    #define CO_NO_INLINE __declspec(noinline)
+    #define ZE_NO_INLINE __declspec(noinline)
   #else
-    #define CO_NO_INLINE
+    #define ZE_NO_INLINE
   #endif
 #endif
 
@@ -205,20 +205,20 @@
   #endif /* = !defined(__STDC_VERSION__) && !defined(__cplusplus) */
 #endif
 
-#if !defined(CO_MALLOC) || !defined(CO_FREE) || !defined(CO_REALLOC)|| !defined(CO_CALLOC)
+#if !defined(ZE_MALLOC) || !defined(ZE_FREE) || !defined(ZE_REALLOC)|| !defined(ZE_CALLOC)
   #include <stdlib.h>
-  #define CO_MALLOC malloc
-  #define CO_FREE free
-  #define CO_REALLOC realloc
-  #define CO_CALLOC calloc
+  #define ZE_MALLOC malloc
+  #define ZE_FREE free
+  #define ZE_REALLOC realloc
+  #define ZE_CALLOC calloc
 #endif
 
 #if defined(__clang__)
   #pragma clang diagnostic ignored "-Wparentheses"
 
   /* placing code in section(text) does not mark it executable with Clang. */
-  #undef  CO_MPROTECT
-  #define CO_MPROTECT
+  #undef  ZE_MPROTECT
+  #define ZE_MPROTECT
 #endif
 
 #if (defined(__clang__) || defined(__GNUC__)) && defined(__i386__)
@@ -229,7 +229,7 @@
   #define fastcall
 #endif
 
-#ifdef CO_USE_VALGRIND
+#ifdef ZE_USE_VALGRIND
 #include <valgrind/valgrind.h>
 #endif
 
@@ -254,7 +254,7 @@
 #endif
 
 /* Number used only to assist checking for stack overflows. */
-#define CO_MAGIC_NUMBER 0x7E3CB1A9
+#define ZE_MAGIC_NUMBER 0x7E3CB1A9
 
 #ifdef __cplusplus
 extern "C"
@@ -263,53 +263,53 @@ extern "C"
 
 typedef enum
 {
-    CO_NULL = -1,
-    CO_INT,
-    CO_ENUM,
-    CO_INTEGER,
-    CO_UINT,
-    CO_SLONG,
-    CO_ULONG,
-    CO_LLONG,
-    CO_MAXSIZE,
-    CO_FLOAT,
-    CO_DOUBLE,
-    CO_BOOL,
-    CO_SHORT,
-    CO_USHORT,
-    CO_CHAR,
-    CO_UCHAR,
-    CO_UCHAR_P,
-    CO_CHAR_P,
-    CO_CONST_CHAR,
-    CO_STRING,
-    CO_ARRAY,
-    CO_HASH,
-    CO_OBJ,
-    CO_PTR,
-    CO_FUNC,
-    CO_NONE,
-    CO_DEF_ARR,
-    CO_DEF_FUNC,
-    CO_REFLECT_TYPE,
-    CO_REFLECT_INFO,
-    CO_REFLECT_VALUE,
-    CO_MAP_VALUE,
-    CO_MAP_STRUCT,
-    CO_MAP_ITER,
-    CO_MAP_ARR,
-    CO_ERR_PTR,
-    CO_ERR_CONTEXT,
-    CO_PROMISE,
-    CO_FUTURE,
-    CO_FUTURE_ARG,
-    CO_EVENT_ARG,
-    CO_SCHED,
-    CO_CHANNEL,
-    CO_STRUCT,
-    CO_UNION,
-    CO_VALUE,
-    CO_NO_INSTANCE
+    ZE_NULL = -1,
+    ZE_INT,
+    ZE_ENUM,
+    ZE_INTEGER,
+    ZE_UINT,
+    ZE_SLONG,
+    ZE_ULONG,
+    ZE_LLONG,
+    ZE_MAXSIZE,
+    ZE_FLOAT,
+    ZE_DOUBLE,
+    ZE_BOOL,
+    ZE_SHORT,
+    ZE_USHORT,
+    ZE_CHAR,
+    ZE_UCHAR,
+    ZE_UCHAR_P,
+    ZE_CHAR_P,
+    ZE_CONST_CHAR,
+    ZE_STRING,
+    ZE_ARRAY,
+    ZE_HASH,
+    ZE_OBJ,
+    ZE_PTR,
+    ZE_FUNC,
+    ZE_NONE,
+    ZE_DEF_ARR,
+    ZE_DEF_FUNC,
+    ZE_REFLECT_TYPE,
+    ZE_REFLECT_INFO,
+    ZE_REFLECT_VALUE,
+    ZE_MAP_VALUE,
+    ZE_MAP_STRUCT,
+    ZE_MAP_ITER,
+    ZE_MAP_ARR,
+    ZE_ERR_PTR,
+    ZE_ERR_CONTEXT,
+    ZE_PROMISE,
+    ZE_FUTURE,
+    ZE_FUTURE_ARG,
+    ZE_EVENT_ARG,
+    ZE_SCHED,
+    ZE_CHANNEL,
+    ZE_STRUCT,
+    ZE_UNION,
+    ZE_VALUE,
+    ZE_NO_INSTANCE
 } value_types;
 
 typedef void *void_t;
@@ -350,23 +350,23 @@ typedef struct {
 /* Coroutine states. */
 typedef enum co_state
 {
-    CO_EVENT_DEAD = -1, /* The coroutine has ended it's Event Loop routine, is uninitialized or deleted. */
-    CO_DEAD, /* The coroutine is uninitialized or deleted. */
-    CO_NORMAL,   /* The coroutine is active but not running (that is, it has switch to another coroutine, suspended). */
-    CO_RUNNING,  /* The coroutine is active and running. */
-    CO_SUSPENDED, /* The coroutine is suspended (in a startup, or it has not started running yet). */
-    CO_EVENT /* The coroutine is in an Event Loop callback. */
+    ZE_EVENT_DEAD = -1, /* The coroutine has ended it's Event Loop routine, is uninitialized or deleted. */
+    ZE_DEAD, /* The coroutine is uninitialized or deleted. */
+    ZE_NORMAL,   /* The coroutine is active but not running (that is, it has switch to another coroutine, suspended). */
+    ZE_RUNNING,  /* The coroutine is active and running. */
+    ZE_SUSPENDED, /* The coroutine is suspended (in a startup, or it has not started running yet). */
+    ZE_EVENT /* The coroutine is in an Event Loop callback. */
 } co_state;
 
-typedef struct routine_s co_routine_t;
-typedef struct oa_hash_s co_hast_t;
+typedef struct routine_s routine_t;
+typedef struct oa_hash_s hash_t;
 typedef struct ex_ptr_s ex_ptr_t;
 typedef struct ex_context_s ex_context_t;
-typedef co_hast_t wait_group_t;
-typedef co_hast_t wait_result_t;
-typedef co_hast_t ht_map_t;
-typedef co_hast_t gc_channel_t;
-typedef co_hast_t gc_coroutine_t;
+typedef hash_t wait_group_t;
+typedef hash_t wait_result_t;
+typedef hash_t ht_map_t;
+typedef hash_t gc_channel_t;
+typedef hash_t gc_coroutine_t;
 
 #if ((defined(__clang__) || defined(__GNUC__)) && defined(__i386__)) || (defined(_MSC_VER) && defined(_M_IX86))
     #define USE_NATIVE 1
@@ -418,7 +418,7 @@ typedef co_hast_t gc_coroutine_t;
         C_API int getcontext(ucontext_t *ucp);
         C_API int setcontext(const ucontext_t *ucp);
         C_API int makecontext(ucontext_t *, void (*)(), int, ...);
-        C_API int swapcontext(co_routine_t *, const co_routine_t *);
+        C_API int swapcontext(routine_t *, const routine_t *);
     #else
         #include <ucontext.h>
     #endif
@@ -487,12 +487,12 @@ struct routine_s {
     defer_t defer;
     char name[ 64 ];
     char state[ 64 ];
-    char scrape[ CO_SCRAPE_SIZE ];
+    char scrape[ ZE_SCRAPE_SIZE ];
     /* unique coroutine id */
     int cid;
     size_t alarm_time;
-    co_routine_t *next;
-    co_routine_t *prev;
+    routine_t *next;
+    routine_t *prev;
     bool channeled;
     bool ready;
     bool system;
@@ -501,12 +501,12 @@ struct routine_s {
     bool synced;
     bool wait_active;
     int wait_counter;
-    co_hast_t *wait_group;
+    hash_t *wait_group;
     int all_coroutine_slot;
-    co_routine_t *context;
+    routine_t *context;
     bool loop_active;
     void_t user_data;
-#if defined(CO_USE_VALGRIND)
+#if defined(ZE_USE_VALGRIND)
     unsigned int vg_stack_id;
 #endif
     void_t args;
@@ -525,8 +525,8 @@ struct routine_s {
 typedef struct co_scheduler_s
 {
     value_types type;
-    co_routine_t *head;
-    co_routine_t *tail;
+    routine_t *head;
+    routine_t *tail;
 } co_scheduler_t;
 
 /* Generic simple union storage types. */
@@ -553,17 +553,15 @@ typedef union
     const char str[512];
 } value_t;
 
-/* Cast argument to union co_value_t storage type */
-#define co_args(x) (co_value_t *)((x))
-typedef struct co_value
+typedef struct values_s
 {
     value_t value;
     value_types type;
-} co_value_t;
+} values_t;
 
 typedef enum {
-    ZE_OK = CO_NONE,
-    ZE_ERR = CO_NULL,
+    ZE_OK = ZE_NONE,
+    ZE_ERR = ZE_NULL,
 } result_type;
 
 typedef struct {
@@ -575,8 +573,8 @@ typedef struct uv_args_s
 {
     value_types type;
     /* allocated array of arguments */
-    co_value_t *args;
-    co_routine_t *context;
+    values_t *args;
+    routine_t *context;
 
     bool is_path;
     uv_fs_type fs_type;
@@ -612,7 +610,7 @@ typedef struct channel_s
     unsigned int nbuf;
     unsigned int off;
     unsigned int id;
-    co_value_t *tmp;
+    values_t *tmp;
     msg_queue_t a_send;
     msg_queue_t a_recv;
     char *name;
@@ -633,37 +631,37 @@ struct channel_co_s
     channel_t *c;
     void_t v;
     unsigned int op;
-    co_routine_t *co;
+    routine_t *co;
     channel_co_t *x_msg;
 };
 
 uv_loop_t *co_loop(void);
 
 /* Return handle to current coroutine. */
-C_API co_routine_t *co_active(void);
+C_API routine_t *co_active(void);
 
 /* Delete specified coroutine. */
-C_API void co_delete(co_routine_t *);
+C_API void co_delete(routine_t *);
 
 /* Switch to specified coroutine. */
-C_API void co_switch(co_routine_t *);
+C_API void co_switch(routine_t *);
 
 /* Check for coroutine completetion and return. */
-C_API bool co_terminated(co_routine_t *);
+C_API bool co_terminated(routine_t *);
 
 /* Return handle to previous coroutine. */
-C_API co_routine_t *co_current(void);
+C_API routine_t *co_current(void);
 
 /* Return coroutine executing for scheduler */
-C_API co_routine_t *co_coroutine(void);
+C_API routine_t *co_coroutine(void);
 
 /* Return the value in union storage type. */
 C_API value_t co_value(void_t);
 
-C_API co_value_t *co_var(var_t *);
+C_API values_t *co_var(var_t *);
 
 /* Return the value in union storage type. */
-C_API value_t co_data(co_value_t *);
+C_API value_t co_data(values_t *);
 
 /* Suspends the execution of current coroutine. */
 C_API void co_suspend(void);
@@ -671,44 +669,44 @@ C_API void co_suspend(void);
 C_API void co_scheduler(void);
 
 /* Yield to specified coroutine, passing data. */
-C_API void co_yielding(co_routine_t *);
+C_API void co_yielding(routine_t *);
 
-C_API void co_resuming(co_routine_t *);
+C_API void co_resuming(routine_t *);
 
 /* Returns the status of the coroutine. */
-C_API co_state co_status(co_routine_t *);
+C_API co_state co_status(routine_t *);
 
 /* Get coroutine user data. */
-C_API void_t co_user_data(co_routine_t *);
+C_API void_t co_user_data(routine_t *);
 
-C_API void co_deferred_free(co_routine_t *);
+C_API void co_deferred_free(routine_t *);
 
 /* Defer execution `LIFO` of given function with argument,
 to when current coroutine exits/returns. */
 C_API void co_defer(func_t, void_t);
-C_API void co_deferred(co_routine_t *, func_t, void_t);
-C_API void co_deferred_run(co_routine_t *, size_t);
-C_API size_t co_deferred_count(const co_routine_t *);
+C_API void co_deferred(routine_t *, func_t, void_t);
+C_API void co_deferred_run(routine_t *, size_t);
+C_API size_t co_deferred_count(const routine_t *);
 
 /* Same as `defer` but allows recover from an Error condition throw/panic,
 you must call `co_recover` to retrieve error message and mark Error condition handled. */
 C_API void co_defer_recover(func_t, void_t);
 C_API string_t co_recover(void);
 
-/* Call `CO_CALLOC` to allocate memory array of given count and size in current coroutine,
+/* Call `ZE_CALLOC` to allocate memory array of given count and size in current coroutine,
 will auto free `LIFO` on function exit/return, do not free! */
 C_API void_t co_new_by(int, size_t);
-C_API void_t co_calloc_full(co_routine_t *, int, size_t, func_t);
+C_API void_t co_calloc_full(routine_t *, int, size_t, func_t);
 
-/* Call `CO_MALLOC` to allocate memory of given size in current coroutine,
+/* Call `ZE_MALLOC` to allocate memory of given size in current coroutine,
 will auto free `LIFO` on function exit/return, do not free! */
 C_API void_t co_new(size_t);
-C_API void_t co_malloc(co_routine_t *, size_t);
-C_API void_t co_malloc_full(co_routine_t *, size_t, func_t);
+C_API void_t co_malloc(routine_t *, size_t);
+C_API void_t co_malloc_full(routine_t *, size_t, func_t);
 C_API char *co_strdup(string_t );
 C_API char *co_strndup(string_t , size_t);
 C_API char *co_sprintf(string_t , ...);
-C_API void_t co_memdup(co_routine_t *, const_t , size_t);
+C_API void_t co_memdup(routine_t *, const_t , size_t);
 
 C_API int co_array_init(co_array_t *);
 
@@ -760,7 +758,7 @@ C_API char *coroutine_get_name(void);
 exit the entire program using the given exit status. */
 C_API void coroutine_exit(int);
 
-C_API void coroutine_schedule(co_routine_t *);
+C_API void coroutine_schedule(routine_t *);
 C_API bool coroutine_active(void);
 C_API void coroutine_info(void);
 
@@ -811,27 +809,27 @@ struct oa_hash_s {
     oa_val_ops val_ops;
 };
 
-C_API void co_hash_free(co_hast_t *);
-C_API void_t co_hash_put(co_hast_t *, const_t, const_t);
-C_API void_t co_hash_replace(co_hast_t *, const_t, const_t);
-C_API void_t co_hash_get(co_hast_t *, const_t);
-C_API void co_hash_delete(co_hast_t *, const_t);
-C_API void co_hash_remove(co_hast_t *, const_t);
-C_API void co_hash_print(co_hast_t *, void (*print_key)(const_t k), void (*print_val)(const_t v));
+C_API void hash_free(hash_t *);
+C_API void_t hash_put(hash_t *, const_t, const_t);
+C_API void_t hash_replace(hash_t *, const_t, const_t);
+C_API void_t hash_get(hash_t *, const_t);
+C_API void hash_delete(hash_t *, const_t);
+C_API void hash_remove(hash_t *, const_t);
+C_API void hash_print(hash_t *, void (*print_key)(const_t k), void (*print_val)(const_t v));
 
 /* Creates a new wait group coroutine hash table. */
-C_API wait_group_t *co_ht_group_init(void);
+C_API wait_group_t *ht_group_init(void);
 
 /* Creates a new wait group results hash table. */
-C_API wait_result_t *co_ht_result_init(void);
+C_API wait_result_t *ht_result_init(void);
 
-C_API gc_channel_t *co_ht_channel_init(void);
+C_API gc_channel_t *ht_channel_init(void);
 
-C_API ht_map_t *co_ht_map_init(void);
+C_API ht_map_t *ht_map_init(void);
 
-C_API ht_map_t *co_ht_map_long_init(void);
+C_API ht_map_t *ht_map_long_init(void);
 
-C_API ht_map_t *co_ht_map_string_init(void);
+C_API ht_map_t *ht_map_string_init(void);
 
 /* Creates/initialize the next series/collection of coroutine's created to be part of wait group, same behavior of Go's waitGroups, but without passing struct or indicating when done.
 
@@ -847,7 +845,7 @@ C_API wait_result_t *co_wait(wait_group_t *);
 /* Returns results of the given completed coroutine id, value in union value_t storage format. */
 C_API value_t co_group_get_result(wait_result_t *, int);
 
-C_API void co_result_set(co_routine_t *, void_t);
+C_API void co_result_set(routine_t *, void_t);
 
 typedef struct map_value_s map_value_t;
 typedef func_t map_value_dtor;
@@ -876,7 +874,7 @@ typedef union {
 } map_value;
 
 typedef enum {
-    MAP_ARRAY = CO_ARRAY,
+    MAP_ARRAY = ZE_ARRAY,
     MAP_HASH
 } map_data_type;
 
@@ -1145,7 +1143,7 @@ struct ex_context_s
     /* The handler in the stack (which is a FILO container). */
     ex_context_t *next;
     ex_ptr_t *stack;
-    co_routine_t *co;
+    routine_t *co;
 
     /** The function from which the exception was thrown */
     const char *volatile function;
@@ -1175,7 +1173,7 @@ C_API thread_local int coroutine_count;
 typedef struct _promise
 {
     value_types type;
-    co_value_t *result;
+    values_t *result;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
     bool done;
@@ -1232,7 +1230,7 @@ C_API void co_stack_check(int);
 C_API string_t co_itoa(int64_t number);
 C_API void co_strcpy(char *dest, string_t src, size_t len);
 
-C_API void gc_coroutine(co_routine_t *);
+C_API void gc_coroutine(routine_t *);
 C_API void gc_channel(channel_t *);
 C_API gc_channel_t *gc_channel_list(void);
 C_API gc_coroutine_t *gc_coroutine_list(void);

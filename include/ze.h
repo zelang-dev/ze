@@ -25,11 +25,11 @@ throws an exception of given message `issue`. */
     variable->value = (variable_type *)co_new_by(1, sizeof(variable_type) + sizeof(data)); \
     memcpy(variable->value, &data, sizeof(data))
 
-#define as_char(variable, data) as_var(variable, char, data, CO_CHAR_P)
-#define as_string(variable, data) as_var(variable, char, data, CO_STRING)
-#define as_long(variable, data) as_var(variable, long, data, CO_LONG)
-#define as_int(variable, data) as_var(variable, int, data, CO_INTEGER)
-#define as_uchar(variable, data) as_var(variable, unsigned char, data, CO_UCHAR)
+#define as_char(variable, data) as_var(variable, char, data, ZE_CHAR_P)
+#define as_string(variable, data) as_var(variable, char, data, ZE_STRING)
+#define as_long(variable, data) as_var(variable, long, data, ZE_LONG)
+#define as_int(variable, data) as_var(variable, int, data, ZE_INTEGER)
+#define as_uchar(variable, data) as_var(variable, unsigned char, data, ZE_UCHAR)
 
 #define as_reflect(variable, type, value) reflect_type_t *variable = reflect_get_##type(); \
     variable->instance = value;
@@ -38,7 +38,7 @@ throws an exception of given message `issue`. */
     as_reflect(variable##_r, var_t, variable)
 
 #define as_instance(variable, variable_type) variable_type *variable = (variable_type *)co_new_by(1, sizeof(variable_type)); \
-    variable->type = CO_STRUCT;
+    variable->type = ZE_STRUCT;
 
 #define as_instance_ref(variable, type) as_instance(variable, type); \
     as_reflect(variable##_r, type, variable)
@@ -160,7 +160,12 @@ throws an exception of given message `issue`. */
 #define or(ENUM) break; case ENUM:
 #define otherwise break; default:
 
-#define loop while(true)
+/* Cast argument to generic union values_t storage type */
+#define args_cast(x) (values_t *)((x))
+
+#define args_by(variable, number_of, variable_type) variable_type *variable[number_of]
+#define args_set(variable, index, value) variable[index] = value
+#define args_get(variable, func_args, index, variable_type) variable_type *variable = ((variable_type **)func_args)[index]
 
 /* The `for_select` macro sets up a coroutine to wait on multiple channel
 operations. Must be closed out with `select_end`, and if no `select_case(channel)`, `select_case_if(channel)`, `select_break` provided, an infinite loop is created.
@@ -206,14 +211,14 @@ Must also closed out with `select_break()`. */
 #define wait_for(wg, wait_result)  wait_result_t *wait_result = co_wait(wg)
 #define get_result_for(wait_result, coroutine_id) co_group_get_result(wait_result, coroutine_id)
 
-#define thread(func, arg) co_async(func, arg)
+#define as_thread(futures, func, arg) future *futures = co_async(func, arg)
 #define thread_until(futures) co_async_wait(futures)
 #define thread_get(futures) co_async_get(futures)
 
-#define message() channel()
-#define message_buf(s) channel_buf(s)
-#define send_msg(c, i) co_send(c, i)
-#define recv_msg(c) co_recv(c)
+#define as_message(variable) channel_t * variable = channel()
+#define as_message_buf(variable, size) channel_t * variable = channel_buf(size)
+#define send_msg(ch, data) co_send(ch, data)
+#define recv_msg(ch) co_recv(ch)
 
 #define as_array(variable, dtor, n_of_items, ...) array_t *variable = array(dtor, n_of_items, __VA_ARGS__); \
     defer(map_free, variable)

@@ -14,56 +14,7 @@
 extern "C" {
 #endif
 
-typedef enum {
-    RE_NULL = -1,
-    RE_INT,
-    RE_ENUM,
-    RE_INTEGER,
-    RE_UINT,
-    RE_SLONG,
-    RE_ULONG,
-    RE_LLONG,
-    RE_MAXSIZE,
-    RE_FLOAT,
-    RE_DOUBLE,
-    RE_BOOL,
-    RE_SHORT,
-    RE_USHORT,
-    RE_CHAR,
-    RE_UCHAR,
-    RE_UCHAR_P,
-    RE_CHAR_P,
-    RE_CONST_CHAR,
-    RE_STRING,
-    RE_ARRAY,
-    RE_HASH,
-    RE_OBJ,
-    RE_PTR,
-    RE_FUNC,
-    RE_NONE,
-    RE_DEF_ARR,
-    RE_DEF_FUNC,
-    RE_REFLECT_TYPE,
-    RE_REFLECT_INFO,
-    RE_REFLECT_VALUE,
-    RE_MAP_VALUE,
-    RE_MAP_STRUCT,
-    RE_MAP_ITER,
-    RE_MAP_ARR,
-    RE_ERR_PTR,
-    RE_ERR_CONTEXT,
-    RE_PROMISE,
-    RE_FUTURE,
-    RE_FUTURE_ARG,
-    RE_EVENT_ARG,
-    RE_SCHED,
-    RE_CHANNEL,
-    RE_STRUCT,
-    RE_UNION,
-    RE_VALUE,
-    RE_NO_INSTANCE
-} reflect_types;
-
+typedef value_types reflect_types;
 typedef struct reflect_value_s {
     reflect_types type;
     string_t value_type;
@@ -244,11 +195,11 @@ typedef struct reflect_type_s {
 #define RE_IS_SIGNED_(DATA_TYPE, CTYPE) RE_IS_SIGNED_##DATA_TYPE(CTYPE)
 
 #define RE_ARRAY_FIELD_INFO_(TYPE_NAME, DATA_TYPE, C_TYPE, FIELD_NAME, ARRAY_SIZE) \
-    RE_##DATA_TYPE, #C_TYPE, #FIELD_NAME, sizeof(C_TYPE) * ARRAY_SIZE, offsetof(TYPE_NAME, FIELD_NAME), \
+    ZE_##DATA_TYPE, #C_TYPE, #FIELD_NAME, sizeof(C_TYPE) * ARRAY_SIZE, offsetof(TYPE_NAME, FIELD_NAME), \
     RE_IS_SIGNED_(DATA_TYPE, C_TYPE), ARRAY_SIZE
 
 #define RE_SIMPLE_FIELD_INFO_(TYPE_NAME, DATA_TYPE, C_TYPE, FIELD_NAME) \
-    RE_##DATA_TYPE, #C_TYPE, #FIELD_NAME, sizeof(C_TYPE), offsetof(TYPE_NAME, FIELD_NAME), \
+    ZE_##DATA_TYPE, #C_TYPE, #FIELD_NAME, sizeof(C_TYPE), offsetof(TYPE_NAME, FIELD_NAME), \
     RE_IS_SIGNED_(DATA_TYPE, C_TYPE), -1
 
 #define RE_FIELD_INFO_(...) \
@@ -272,7 +223,7 @@ typedef struct reflect_type_s {
         }; \
         static reflect_type_t type_info = \
         { \
-            RE_STRUCT, \
+            ZE_STRUCT, \
             NULL, \
             #TYPE_NAME, \
             RE_FOREACH(RE_SUM, 0, __VA_ARGS__), \

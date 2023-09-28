@@ -66,7 +66,7 @@ oa_hash *oa_hash_new(
     oa_key_ops key_ops,
     oa_val_ops val_ops,
     void (*probing_fct)(struct oa_hash_s *htable, size_t *from_idx)) {
-    oa_hash *htable = CO_CALLOC(1, sizeof(*htable));
+    oa_hash *htable = ZE_CALLOC(1, sizeof(*htable));
     if (NULL == htable)
         co_panic("calloc() failed");
 
@@ -76,7 +76,7 @@ oa_hash *oa_hash_new(
     htable->key_ops = key_ops;
     htable->probing_fct = probing_fct;
 
-    htable->buckets = CO_CALLOC(1, sizeof(*(htable->buckets)) * htable->capacity);
+    htable->buckets = ZE_CALLOC(1, sizeof(*(htable->buckets)) * htable->capacity);
     if (NULL == htable->buckets)
         co_panic("calloc() failed");
 
@@ -103,15 +103,15 @@ void oa_hash_free(oa_hash *htable) {
             htable->buckets[ i ]->key = NULL;
         }
 
-        CO_FREE(htable->buckets[ i ]);
+        ZE_FREE(htable->buckets[ i ]);
         htable->buckets[ i ] = NULL;
     }
 
     if (htable->buckets != NULL)
-        CO_FREE(htable->buckets);
+        ZE_FREE(htable->buckets);
 
     htable->buckets = NULL;
-    CO_FREE(htable);
+    ZE_FREE(htable);
 }
 
 inline static void oa_hash_grow(oa_hash *htable) {
@@ -128,7 +128,7 @@ inline static void oa_hash_grow(oa_hash *htable) {
 
     htable->capacity = (uint32_t)new_capacity_64;
     htable->size = 0;
-    htable->buckets = CO_CALLOC(1, htable->capacity * sizeof(*(htable->buckets)));
+    htable->buckets = ZE_CALLOC(1, htable->capacity * sizeof(*(htable->buckets)));
 
     if (NULL == htable->buckets)
         co_panic("calloc() failed");
@@ -143,11 +143,11 @@ inline static void oa_hash_grow(oa_hash *htable) {
             oa_hash_put(htable, crt_pair->key, crt_pair->value);
             htable->key_ops.free(crt_pair->key, htable->key_ops.arg);
             htable->val_ops.free(crt_pair->value);
-            CO_FREE(crt_pair);
+            ZE_FREE(crt_pair);
         }
     }
 
-    CO_FREE(old_buckets);
+    ZE_FREE(old_buckets);
 }
 
 inline static bool oa_hash_should_grow(oa_hash *htable) {
@@ -330,7 +330,7 @@ static size_t oa_hash_getidx(oa_hash *htable, size_t idx, uint32_t hash_val, con
 }
 
 oa_pair *oa_pair_new(uint32_t hash, const_t key, const_t value) {
-    oa_pair *p = CO_CALLOC(1, sizeof(*p) + sizeof(key) + sizeof(value) + 2);
+    oa_pair *p = ZE_CALLOC(1, sizeof(*p) + sizeof(key) + sizeof(value) + 2);
     if (NULL == p)
         co_panic("calloc() failed");
 
@@ -377,7 +377,7 @@ uint32_t oa_string_hash(const_t data, void_t arg) {
 void_t oa_string_cp(const_t data, void_t arg) {
     string_t input = (string_t)data;
     size_t input_length = strlen(input) + 1;
-    char *result = CO_CALLOC(1, sizeof(*result) * input_length + sizeof(co_value_t) + 1);
+    char *result = ZE_CALLOC(1, sizeof(*result) * input_length + sizeof(values_t) + 1);
     if (NULL == result)
         co_panic("calloc() failed");
 
@@ -390,7 +390,7 @@ bool oa_coroutine_eq(const_t data1, const_t data2, void_t arg) {
 }
 
 void_t oa_coroutine_cp(const_t data, void_t arg) {
-    return (co_routine_t *)data;
+    return (routine_t *)data;
 }
 
 void_t oa_channel_cp(const_t data, void_t arg) {
@@ -398,7 +398,7 @@ void_t oa_channel_cp(const_t data, void_t arg) {
 }
 
 void_t oa_value_cp(const_t data, void_t arg) {
-    co_value_t *result = CO_CALLOC(1, sizeof(data) + sizeof(co_value_t) + 1);
+    values_t *result = ZE_CALLOC(1, sizeof(data) + sizeof(values_t) + 1);
     if (NULL == result)
         co_panic("calloc() failed");
 
@@ -411,7 +411,7 @@ bool oa_value_eq(const_t data1, const_t data2, void_t arg) {
 }
 
 void oa_string_free(void_t data, void_t arg) {
-    CO_FREE(data);
+    ZE_FREE(data);
 }
 
 void oa_string_print(const_t data) {
@@ -421,7 +421,7 @@ void oa_string_print(const_t data) {
 void oa_map_free(void_t data) {}
 
 void_t oa_map_cp(const_t data, void_t arg) {
-    map_value_t *result = CO_CALLOC(1, sizeof(data) + sizeof(map_value_t) + 1);
+    map_value_t *result = ZE_CALLOC(1, sizeof(data) + sizeof(map_value_t) + 1);
     if (NULL == result)
         co_panic("calloc() failed");
 
@@ -430,7 +430,7 @@ void_t oa_map_cp(const_t data, void_t arg) {
 }
 
 void_t oa_map_cp_long(const_t data, void_t arg) {
-    int64_t *result = CO_CALLOC(1, sizeof(data) + sizeof(map_value_t));
+    int64_t *result = ZE_CALLOC(1, sizeof(data) + sizeof(map_value_t));
     if (NULL == result)
         co_panic("calloc() failed");
 
@@ -440,60 +440,60 @@ void_t oa_map_cp_long(const_t data, void_t arg) {
 
 oa_key_ops oa_key_ops_string = { oa_string_hash, oa_string_cp, oa_string_free, oa_string_eq, NULL };
 oa_val_ops oa_val_ops_struct = { oa_coroutine_cp, FUNC_VOID(co_delete), oa_value_eq, NULL };
-oa_val_ops oa_val_ops_string = { oa_string_cp, CO_FREE, oa_string_eq, NULL };
-oa_val_ops oa_val_ops_value = { oa_value_cp, CO_FREE, oa_value_eq, NULL };
-oa_val_ops oa_val_ops_map_long = { oa_map_cp_long, CO_FREE, oa_value_eq, NULL };
-oa_val_ops oa_val_ops_map = {oa_map_cp, CO_FREE, oa_value_eq, NULL};
+oa_val_ops oa_val_ops_string = { oa_string_cp, ZE_FREE, oa_string_eq, NULL };
+oa_val_ops oa_val_ops_value = { oa_value_cp, ZE_FREE, oa_value_eq, NULL };
+oa_val_ops oa_val_ops_map_long = { oa_map_cp_long, ZE_FREE, oa_value_eq, NULL };
+oa_val_ops oa_val_ops_map = {oa_map_cp, ZE_FREE, oa_value_eq, NULL};
 oa_val_ops oa_val_ops_channel = {oa_channel_cp, FUNC_VOID(channel_free), oa_value_eq, NULL};
 
-CO_FORCE_INLINE wait_group_t *co_ht_group_init() {
+ZE_FORCE_INLINE wait_group_t *ht_group_init() {
     return (wait_group_t *)oa_hash_new(oa_key_ops_string, oa_val_ops_struct, oa_hash_lp_idx);
 }
 
-CO_FORCE_INLINE wait_result_t *co_ht_result_init() {
+ZE_FORCE_INLINE wait_result_t *ht_result_init() {
     return (wait_result_t *)oa_hash_new(oa_key_ops_string, oa_val_ops_value, oa_hash_lp_idx);
 }
 
-CO_FORCE_INLINE gc_channel_t *co_ht_channel_init() {
+ZE_FORCE_INLINE gc_channel_t *ht_channel_init() {
     return (gc_channel_t *)oa_hash_new(oa_key_ops_string, oa_val_ops_channel, oa_hash_lp_idx);
 }
 
-CO_FORCE_INLINE ht_map_t *co_ht_map_init() {
+ZE_FORCE_INLINE ht_map_t *ht_map_init() {
     return (ht_map_t *)oa_hash_new(oa_key_ops_string, oa_val_ops_map, oa_hash_lp_idx);
 }
 
-CO_FORCE_INLINE ht_map_t *co_ht_map_long_init() {
+ZE_FORCE_INLINE ht_map_t *ht_map_long_init() {
     return (ht_map_t *)oa_hash_new(oa_key_ops_string, oa_val_ops_map_long, oa_hash_lp_idx);
 }
 
-CO_FORCE_INLINE ht_map_t *co_ht_map_string_init() {
+ZE_FORCE_INLINE ht_map_t *ht_map_string_init() {
     return (ht_map_t *)oa_hash_new(oa_key_ops_string, oa_val_ops_string, oa_hash_lp_idx);
 }
 
-CO_FORCE_INLINE void co_hash_free(co_hast_t *htable) {
+ZE_FORCE_INLINE void hash_free(hash_t *htable) {
     oa_hash_free(htable);
 }
 
-CO_FORCE_INLINE void_t co_hash_put(co_hast_t *htable, const_t key, const_t value) {
+ZE_FORCE_INLINE void_t hash_put(hash_t *htable, const_t key, const_t value) {
     return oa_hash_put(htable, key, value);
 }
 
-CO_FORCE_INLINE void_t co_hash_replace(co_hast_t *htable, const_t key, const_t value) {
+ZE_FORCE_INLINE void_t hash_replace(hash_t *htable, const_t key, const_t value) {
     return oa_hash_replace(htable, key, value);
 }
 
-CO_FORCE_INLINE void_t co_hash_get(co_hast_t *htable, const_t key) {
+ZE_FORCE_INLINE void_t hash_get(hash_t *htable, const_t key) {
     return oa_hash_get(htable, key);
 }
 
-CO_FORCE_INLINE void co_hash_delete(co_hast_t *htable, const_t key) {
+ZE_FORCE_INLINE void hash_delete(hash_t *htable, const_t key) {
     oa_hash_delete(htable, key);
 }
 
-CO_FORCE_INLINE void co_hash_remove(co_hast_t *htable, const_t key) {
+ZE_FORCE_INLINE void hash_remove(hash_t *htable, const_t key) {
     oa_hash_remove(htable, key);
 }
 
-CO_FORCE_INLINE void co_hash_print(co_hast_t *htable, void (*print_key)(const_t k), void (*print_val)(const_t v)) {
+ZE_FORCE_INLINE void hash_print(hash_t *htable, void (*print_key)(const_t k), void (*print_val)(const_t v)) {
     oa_hash_print(htable, print_key, print_val);
 }

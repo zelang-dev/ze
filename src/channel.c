@@ -3,14 +3,14 @@
 static thread_local int channel_id_generate = 0;
 
 channel_t *channel_create(int elem_size, int bufsize) {
-    channel_t *c = CO_CALLOC(1, sizeof(channel_t) + bufsize * elem_size);
-    co_value_t *s = CO_CALLOC(1, sizeof(co_value_t));
+    channel_t *c = ZE_CALLOC(1, sizeof(channel_t) + bufsize * elem_size);
+    values_t *s = ZE_CALLOC(1, sizeof(values_t));
 
     if (c == NULL || s == NULL)
         co_panic("channel_create failed");
 
     c->id = channel_id_generate++;
-    c->type = CO_CHANNEL;
+    c->type = ZE_CHANNEL;
     c->elem_size = elem_size;
     c->bufsize = bufsize;
     c->nbuf = 0;
@@ -22,36 +22,36 @@ channel_t *channel_create(int elem_size, int bufsize) {
     return c;
 }
 
-CO_FORCE_INLINE channel_t *channel() {
-    return channel_create(sizeof(co_value_t), 0);
+ZE_FORCE_INLINE channel_t *channel() {
+    return channel_create(sizeof(values_t), 0);
 }
 
-CO_FORCE_INLINE channel_t *channel_buf(int elem_count) {
-    return channel_create(sizeof(co_value_t), elem_count);
+ZE_FORCE_INLINE channel_t *channel_buf(int elem_count) {
+    return channel_create(sizeof(values_t), elem_count);
 }
 
 void channel_free(channel_t *c) {
     if (c == NULL)
         return;
 
-    if (is_type(c, CO_CHANNEL)) {
+    if (is_type(c, ZE_CHANNEL)) {
         int id = c->id;
         if (c->name != NULL)
-            CO_FREE(c->name);
+            ZE_FREE(c->name);
 
-        CO_FREE(c->tmp);
-        CO_FREE(c->a_recv.a);
-        CO_FREE(c->a_send.a);
-        CO_FREE(c);
+        ZE_FREE(c->tmp);
+        ZE_FREE(c->a_recv.a);
+        ZE_FREE(c->a_send.a);
+        ZE_FREE(c);
 
-       co_hash_remove(gc_channel_list(), co_itoa(id));
+       hash_remove(gc_channel_list(), co_itoa(id));
     }
 }
 
 static void add_msg(msg_queue_t *a, channel_co_t *alt) {
     if (a->n == a->m) {
         a->m += 16;
-        a->a = CO_REALLOC(a->a, a->m * sizeof(a->a[ 0 ]));
+        a->a = ZE_REALLOC(a->a, a->m * sizeof(a->a[ 0 ]));
     }
     a->a[ a->n++ ] = alt;
 }
@@ -160,15 +160,15 @@ static void channel_co_copy(channel_co_t *s, channel_co_t *r) {
      */
     if (s == NULL && r == NULL)
         return;
-    CO_ASSERT(s != NULL);
+    ZE_ASSERT(s != NULL);
     c = s->c;
     if (s->op == CHANNEL_RECV) {
         t = s;
         s = r;
         r = t;
     }
-    CO_ASSERT(s == NULL || s->op == CHANNEL_SEND);
-    CO_ASSERT(r == NULL || r->op == CHANNEL_RECV);
+    ZE_ASSERT(s == NULL || s->op == CHANNEL_SEND);
+    ZE_ASSERT(r == NULL || r->op == CHANNEL_RECV);
 
     /*
      * channel_t is empty (or unbuffered) - copy directly.
@@ -218,7 +218,7 @@ static void channel_co_exec(channel_co_t *a) {
 static int channel_proc(channel_co_t *a) {
     int i, j, n_can, n, can_block;
     channel_t *c;
-    co_routine_t *t;
+    routine_t *t;
 
     co_stack_check(512);
     for (i = 0; a[ i ].op != CHANNEL_END && a[ i ].op != CHANNEL_BLK; i++);
@@ -232,21 +232,21 @@ static int channel_proc(channel_co_t *a) {
         a[ i ].x_msg = a;
     }
 
-    CO_LOG("processed ");
+    ZE_LOG("processed ");
 
     n_can = 0;
     for (i = 0; i < n; i++) {
         c = a[ i ].c;
 
-        CO_INFO(" %c:", "esrnb"[ a[ i ].op ]);
-#ifdef CO_DEBUG
+        ZE_INFO(" %c:", "esrnb"[ a[ i ].op ]);
+#ifdef ZE_DEBUG
         if (c->name)
             printf("%s", c->name);
         else
             printf("%p", c);
 #endif
         if (channel_co_can_exec(&a[ i ])) {
-            CO_LOG("*");
+            ZE_LOG("*");
             n_can++;
         }
     }
@@ -257,14 +257,14 @@ static int channel_proc(channel_co_t *a) {
             if (channel_co_can_exec(&a[ i ])) {
                 if (j-- == 0) {
                     c = a[ i ].c;
-                    CO_INFO(" => %c:", "esrnb"[ a[ i ].op ]);
-#ifdef CO_DEBUG
+                    ZE_INFO(" => %c:", "esrnb"[ a[ i ].op ]);
+#ifdef ZE_DEBUG
                     if (c->name)
                         printf("%s", c->name);
                     else
                         printf("%p", c);
 #endif
-                    CO_LOG(" ");
+                    ZE_LOG(" ");
 
                     channel_co_exec(&a[ i ]);
                     return i;
@@ -273,7 +273,7 @@ static int channel_proc(channel_co_t *a) {
         }
     }
 
-    CO_LOG(" ");
+    ZE_LOG(" ");
     if (!can_block)
         return -1;
 

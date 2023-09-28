@@ -1,30 +1,30 @@
 #include "../include/ze.h"
 
-CO_FORCE_INLINE value_types type_of(void_t self) {
+ZE_FORCE_INLINE value_types type_of(void_t self) {
     return ((var_t *)self)->type;
 }
 
-CO_FORCE_INLINE bool is_type(void_t self, value_types check) {
+ZE_FORCE_INLINE bool is_type(void_t self, value_types check) {
     return type_of(self) == check;
 }
 
-CO_FORCE_INLINE bool is_instance_of(void_t self, void_t check) {
+ZE_FORCE_INLINE bool is_instance_of(void_t self, void_t check) {
     return type_of(self) == type_of(check);
 }
 
-CO_FORCE_INLINE bool is_value(void_t self) {
-    return (type_of(self) > CO_NULL) && (type_of(self) < CO_NONE);
+ZE_FORCE_INLINE bool is_value(void_t self) {
+    return (type_of(self) > ZE_NULL) && (type_of(self) < ZE_NONE);
 }
 
-CO_FORCE_INLINE bool is_instance(void_t self) {
-    return (type_of(self) > CO_NONE) && (type_of(self) < CO_NO_INSTANCE);
+ZE_FORCE_INLINE bool is_instance(void_t self) {
+    return (type_of(self) > ZE_NONE) && (type_of(self) < ZE_NO_INSTANCE);
 }
 
-CO_FORCE_INLINE bool is_valid(void_t self) {
+ZE_FORCE_INLINE bool is_valid(void_t self) {
     return is_value(self) || is_instance(self);
 }
 
-CO_FORCE_INLINE bool is_reflection(void_t self) {
+ZE_FORCE_INLINE bool is_reflection(void_t self) {
     return ((reflect_kind_t *)self)->fields
         && ((reflect_kind_t *)self)->name
         && ((reflect_kind_t *)self)->num_fields
@@ -34,150 +34,150 @@ CO_FORCE_INLINE bool is_reflection(void_t self) {
 
 /*
 TODO:
-    RE_NULL = -1,
-    RE_SLONG,
-    RE_ULONG,
-    RE_SHORT,
-    RE_USHORT,
-    RE_CHAR,
-    RE_UCHAR,
-    RE_ARRAY,
-    RE_HASH,
-    RE_NONE,
-    RE_DEF_ARR,
-    RE_DEF_FUNC,
-    RE_REFLECT_INFO,
-    RE_REFLECT_VALUE,
-    RE_MAP_VALUE,
-    RE_MAP_STRUCT,
-    RE_MAP_ITER,
-    RE_MAP_ARR,
-    RE_ERR_PTR,
-    RE_ERR_CONTEXT,
-    RE_PROMISE,
-    RE_FUTURE,
-    RE_FUTURE_ARG,
-    RE_EVENT_ARG,
-    RE_SCHED,
-    RE_CHANNEL,
-    RE_VALUE,
-    RE_NO_INSTANCE
+    ZE_NULL = -1,
+    ZE_SLONG,
+    ZE_ULONG,
+    ZE_SHORT,
+    ZE_USHORT,
+    ZE_CHAR,
+    ZE_UCHAR,
+    ZE_ARRAY,
+    ZE_HASH,
+    ZE_NONE,
+    ZE_DEF_ARR,
+    ZE_DEF_FUNC,
+    ZE_REFLECT_INFO,
+    ZE_REFLECT_VALUE,
+    ZE_MAP_VALUE,
+    ZE_MAP_STRUCT,
+    ZE_MAP_ITER,
+    ZE_MAP_ARR,
+    ZE_ERR_PTR,
+    ZE_ERR_CONTEXT,
+    ZE_PROMISE,
+    ZE_FUTURE,
+    ZE_FUTUZE_ARG,
+    ZE_EVENT_ARG,
+    ZE_SCHED,
+    ZE_CHANNEL,
+    ZE_VALUE,
+    ZE_NO_INSTANCE
 */
 
 
 string_t reflect_kind(void_t value) {
     reflect_types res = (reflect_types)type_of(value);
-    if (res == RE_STRUCT) {
+    if (res == ZE_STRUCT) {
         if (strcmp(reflect_type_of((reflect_type_t *)value), "var_t") == 0) {
-            char out[CO_SCRAPE_SIZE];
+            char out[ZE_SCRAPE_SIZE];
             reflect_get_field((reflect_type_t *)value, 0, out);
             res = c_int(out);
         }
     }
     switch (res) {
-        case RE_STRUCT:
+        case ZE_STRUCT:
             return "struct";
-        case RE_UNION:
+        case ZE_UNION:
             return "union";
-        case RE_CONST_CHAR:
+        case ZE_CONST_CHAR:
             return "const char *";
-        case RE_STRING:
+        case ZE_STRING:
             // return "string";
-        case RE_CHAR_P:
+        case ZE_CHAR_P:
             return "char *";
-        case RE_UCHAR_P:
+        case ZE_UCHAR_P:
             return "unsigned char *";
-        case RE_INTEGER:
-        case RE_INT:
+        case ZE_INTEGER:
+        case ZE_INT:
             return "int";
-        case RE_UINT:
+        case ZE_UINT:
             return "unsigned int";
-        case RE_MAXSIZE:
+        case ZE_MAXSIZE:
             return "unsigned long long";
-        case RE_LLONG:
+        case ZE_LLONG:
             return "long long";
-        case RE_ENUM:
+        case ZE_ENUM:
             return "enum";
-        case RE_BOOL:
+        case ZE_BOOL:
             return "unsigned char";
-        case RE_FLOAT:
+        case ZE_FLOAT:
             return "float";
-        case RE_DOUBLE:
+        case ZE_DOUBLE:
             return "double";
-        case RE_OBJ:
+        case ZE_OBJ:
             return "* object(struct)";
-        case RE_PTR:
+        case ZE_PTR:
             return "* ptr";
-        case RE_FUNC:
+        case ZE_FUNC:
             return "*(*)(*) callable";
-        case RE_REFLECT_TYPE:
+        case ZE_REFLECT_TYPE:
             return "<> reflect";
     }
 
     return "Unknown error";
 }
 
-CO_FORCE_INLINE void reflect_with(reflect_type_t *type, void_t value) {
+ZE_FORCE_INLINE void reflect_with(reflect_type_t *type, void_t value) {
     type->instance = value;
 }
 
-CO_FORCE_INLINE reflect_field_t *reflect_value_of(reflect_type_t *type) {
+ZE_FORCE_INLINE reflect_field_t *reflect_value_of(reflect_type_t *type) {
     return type->fields;
 }
 
-CO_FORCE_INLINE size_t reflect_num_fields(reflect_type_t *type) {
+ZE_FORCE_INLINE size_t reflect_num_fields(reflect_type_t *type) {
     return type->fields_count;
 }
 
-CO_FORCE_INLINE string_t reflect_type_of(reflect_type_t *type) {
+ZE_FORCE_INLINE string_t reflect_type_of(reflect_type_t *type) {
     return type->name;
 }
 
-CO_FORCE_INLINE reflect_types reflect_type_enum(reflect_type_t *type) {
+ZE_FORCE_INLINE reflect_types reflect_type_enum(reflect_type_t *type) {
     return type->data_type;
 }
 
-CO_FORCE_INLINE size_t reflect_type_size(reflect_type_t *type) {
+ZE_FORCE_INLINE size_t reflect_type_size(reflect_type_t *type) {
     return type->size;
 }
 
-CO_FORCE_INLINE size_t reflect_packed_size(reflect_type_t *type) {
+ZE_FORCE_INLINE size_t reflect_packed_size(reflect_type_t *type) {
     return type->packed_size;
 }
 
-CO_FORCE_INLINE string_t reflect_field_type(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE string_t reflect_field_type(reflect_type_t *type, int slot) {
     return (type->fields + slot)->field_type;
 }
 
-CO_FORCE_INLINE string_t reflect_field_name(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE string_t reflect_field_name(reflect_type_t *type, int slot) {
     return (type->fields + slot)->field_name;
 }
 
-CO_FORCE_INLINE size_t reflect_field_size(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE size_t reflect_field_size(reflect_type_t *type, int slot) {
     return (type->fields + slot)->size;
 }
 
-CO_FORCE_INLINE size_t reflect_field_offset(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE size_t reflect_field_offset(reflect_type_t *type, int slot) {
     return (type->fields + slot)->offset;
 }
 
-CO_FORCE_INLINE bool reflect_field_is_signed(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE bool reflect_field_is_signed(reflect_type_t *type, int slot) {
     return (type->fields + slot)->is_signed;
 }
 
-CO_FORCE_INLINE int reflect_field_array_size(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE int reflect_field_array_size(reflect_type_t *type, int slot) {
     return (type->fields + slot)->array_size;
 }
 
-CO_FORCE_INLINE reflect_types reflect_field_enum(reflect_type_t *type, int slot) {
+ZE_FORCE_INLINE reflect_types reflect_field_enum(reflect_type_t *type, int slot) {
     return (type->fields + slot)->data_type;
 }
 
-CO_FORCE_INLINE void reflect_set_field(reflect_type_t *variable, int slot, void_t value) {
+ZE_FORCE_INLINE void reflect_set_field(reflect_type_t *variable, int slot, void_t value) {
     memcpy((string)variable->instance + (variable->fields + slot)->offset, value, (variable->fields + slot)->size);
 }
 
-CO_FORCE_INLINE void reflect_get_field(reflect_type_t *variable, int slot, void_t out) {
+ZE_FORCE_INLINE void reflect_get_field(reflect_type_t *variable, int slot, void_t out) {
     memcpy(out, (string)variable->instance + (variable->fields + slot)->offset, (variable->fields + slot)->size);
 }
 
@@ -195,7 +195,7 @@ ze_func(defer_func_t,
              (FUNC, func_t, func), (PTR, void_t, data), (PTR, void_t, check)
 )
 ze_func(promise,
-             (STRUCT, co_value_t *, result), (STRUCT, pthread_mutex_t, mutex),
+             (STRUCT, values_t *, result), (STRUCT, pthread_mutex_t, mutex),
              (STRUCT, pthread_cond_t, cond),
              (BOOL, bool, done),
              (INTEGER, int, id)
@@ -210,11 +210,11 @@ ze_func(future_arg,
              (FUNC, callable_t, func), (PTR, void_t, arg), (STRUCT, promise *, value)
 )
 ze_func(co_scheduler_t,
-             (STRUCT, co_routine_t *, head), (STRUCT, co_routine_t *, tail)
+             (STRUCT, routine_t *, head), (STRUCT, routine_t *, tail)
 )
 ze_func(uv_args_t,
-             (STRUCT, co_value_t *, args),
-             (STRUCT, co_routine_t *, context),
+             (STRUCT, values_t *, args),
+             (STRUCT, routine_t *, context),
              (BOOL, bool, is_path),
              (ENUM, uv_fs_type, fs_type),
              (ENUM, uv_req_type, req_type),
@@ -232,7 +232,7 @@ ze_func(channel_t,
              (UINT, unsigned int, nbuf),
              (UINT, unsigned int, off),
              (UINT, unsigned int, id),
-             (STRUCT, co_value_t *, tmp),
+             (STRUCT, values_t *, tmp),
              (STRUCT, msg_queue_t, a_send),
              (STRUCT, msg_queue_t, a_recv),
              (STRING, string, name),
@@ -272,7 +272,7 @@ ze_func(ex_ptr_t,
 ze_func(ex_context_t,
              (STRUCT, ex_context_t *, next),
              (STRUCT, ex_ptr_t *, stack),
-             (STRUCT, co_routine_t *, co),
+             (STRUCT, routine_t *, co),
              (CONST_CHAR, volatile const char *, function),
              (CONST_CHAR, volatile const char *, ex),
              (CONST_CHAR, volatile const char *, file),
@@ -287,14 +287,14 @@ ze_func(object_t,
 reflect_type_t *reflect_get_result_t() {
     static reflect_field_t fields_info[+1 + 1] = {
     {
-        RE_ENUM,
+        ZE_ENUM,
         "result_type",
         "type",
         sizeof(result_type),
         ((size_t) & (((result_t *)0)->type)),
         (result_type)-1 < (result_type)1, -1},
     {
-        RE_UNION,
+        ZE_UNION,
         "value_t *",
         "value",
          sizeof(value_t *),
@@ -302,7 +302,7 @@ reflect_type_t *reflect_get_result_t() {
     };
 
     static reflect_type_t type_info = {
-        RE_STRUCT,
+        ZE_STRUCT,
         ((void *)0),
         "result_t", +1 + 1,
         sizeof(result_t),

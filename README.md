@@ -139,11 +139,11 @@ typedef union
     const char str[512];
 } value_t;
 
-typedef struct co_value
+typedef struct values_s
 {
     value_t value;
     value_types type;
-} co_value_t;
+} values_t;
 
 /* Return an value in union type storage. */
 C_API value_t co_value(void_t);

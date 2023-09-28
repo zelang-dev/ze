@@ -85,7 +85,7 @@ thread_local char ex_message[ 256 ] = { 0 };
 static volatile sig_atomic_t got_signal = false;
 
 static void ex_print(ex_context_t *exception, string_t message) {
-#ifndef CO_DEBUG
+#ifndef ZE_DEBUG
     fprintf(stderr, "\nFatal Error: %s in function(%s)\n\n",
             (exception->co->panic != NULL) ? exception->co->panic : exception->ex, exception->function);
 #else
@@ -106,7 +106,7 @@ ex_ptr_t ex_protect_ptr(ex_ptr_t *const_ptr, void_t ptr, void (*func)(void_t)) {
     if (!ex_context)
         ex_init();
 
-    const_ptr->type = CO_ERR_PTR;
+    const_ptr->type = ZE_ERR_PTR;
     const_ptr->next = ex_context->stack;
     const_ptr->func = func;
     const_ptr->ptr = ptr;
@@ -135,7 +135,7 @@ static void unwind_stack(ex_context_t *ctx) {
 
 void ex_init(void) {
     ex_context = &ex_context_buffer;
-    ex_context->type = CO_ERR_CONTEXT;
+    ex_context->type = ZE_ERR_CONTEXT;
 }
 
 int ex_uncaught_exception(void) {

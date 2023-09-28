@@ -1,5 +1,4 @@
-#include "../include/coroutine.h"
-#include <signal.h>
+#include <ze.h>
 
 static void pfree(void *p)
 {

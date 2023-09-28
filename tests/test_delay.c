@@ -1,10 +1,10 @@
-#include "../include/coroutine.h"
+#include <ze.h>
 
 channel_t *c;
 
 void *delay_co(void *arg)
 {
-    int v = atoi(co_value(arg).string);
+    int v = atoi(co_value(arg).str);
     co_sleep(v);
     printf("awake after %d ms\n", v);
     co_send(c, 0);

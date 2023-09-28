@@ -24,7 +24,7 @@ int test_map_push_pop() {
     map_t *list;
     const char *value;
 
-    list = map_new(CO_FREE);
+    list = map_new(ZE_FREE);
     map_push(list, _value_1);
     ASSERT_XEQ(map_count(list), 1);
     value = map_pop(list)->value.str;
@@ -51,7 +51,7 @@ int test_map_shift_unshift() {
     map_t *list;
     const char *value;
 
-    list = map_new(CO_FREE);
+    list = map_new(ZE_FREE);
     map_shift(list, _value_1);
     ASSERT_XEQ(map_count(list), 1);
     value = map_unshift(list)->value.str;
@@ -76,7 +76,7 @@ int test_map_shift_unshift() {
 int test_map_empty() {
     map_t *list;
 
-    list = map_new(CO_FREE);
+    list = map_new(ZE_FREE);
     ASSERT_NULL(map_pop(list));
     ASSERT_NULL(map_unshift(list));
     map_free(list);
@@ -105,7 +105,7 @@ int test_map_remove_one() {
     map_t *list;
     map_iter_t *iterator;
 
-    list = map_new(CO_FREE);
+    list = map_new(ZE_FREE);
     map_push(list, _value_1);
 
     iterator = iter_new(list, true);

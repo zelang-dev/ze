@@ -54,7 +54,7 @@ void showDetails(reflect_type_t *i, void_t j) {
 }
 
 int co_main(int argc, char **argv) {
-    as_var_ref(iD, myType, "12345678", CO_STRING);
+    as_var_ref(iD, myType, "12345678", ZE_STRING);
 
     as_instance_ref(person, details);
     person->fname = co_strdup("Go");

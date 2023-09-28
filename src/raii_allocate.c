@@ -3,42 +3,42 @@
 static thread_local gc_channel_t *channel_list = NULL;
 static thread_local gc_coroutine_t *coroutine_list = NULL;
 
-void gc_coroutine(co_routine_t *co) {
+void gc_coroutine(routine_t *co) {
     if (!coroutine_list)
         coroutine_list = (gc_coroutine_t *)co_ht_group_init();
-    co_hash_put(coroutine_list, co_itoa(co->cid), co);
+    hash_put(coroutine_list, co_itoa(co->cid), co);
 }
 
 void gc_channel(channel_t *ch) {
     if (!channel_list)
         channel_list = co_ht_channel_init();
-    co_hash_put(channel_list, co_itoa(ch->id), ch);
+    hash_put(channel_list, co_itoa(ch->id), ch);
 }
 
-CO_FORCE_INLINE gc_channel_t *gc_channel_list() {
+ZE_FORCE_INLINE gc_channel_t *gc_channel_list() {
     return channel_list;
 }
 
-CO_FORCE_INLINE gc_coroutine_t *gc_coroutine_list() {
+ZE_FORCE_INLINE gc_coroutine_t *gc_coroutine_list() {
     return coroutine_list;
 }
 
 void gc_channel_free() {
     if (channel_list)
-        co_hash_free(channel_list);
+        hash_free(channel_list);
 }
 
 void gc_coroutine_free() {
     if (coroutine_list)
-        co_hash_free(coroutine_list);
+        hash_free(coroutine_list);
 }
 
-void_t co_malloc_full(co_routine_t *coro, size_t size, func_t func) {
-    void_t ptr = CO_MALLOC(size);
+void_t co_malloc_full(routine_t *coro, size_t size, func_t func) {
+    void_t ptr = ZE_MALLOC(size);
 
     if (LIKELY(ptr)) {
         if (coro->err_allocated == NULL)
-            coro->err_allocated = CO_MALLOC(sizeof(ex_ptr_t));
+            coro->err_allocated = ZE_MALLOC(sizeof(ex_ptr_t));
 
         ex_protect_ptr(coro->err_allocated, ptr, func);
         coro->err_protected = true;
@@ -48,12 +48,12 @@ void_t co_malloc_full(co_routine_t *coro, size_t size, func_t func) {
     return ptr;
 }
 
-void_t co_calloc_full(co_routine_t *coro, int count, size_t size, func_t func) {
-    void_t ptr = CO_CALLOC(count, size);
+void_t co_calloc_full(routine_t *coro, int count, size_t size, func_t func) {
+    void_t ptr = ZE_CALLOC(count, size);
 
     if (LIKELY(ptr)) {
         if (coro->err_allocated == NULL)
-            coro->err_allocated = CO_CALLOC(1, sizeof(ex_ptr_t));
+            coro->err_allocated = ZE_CALLOC(1, sizeof(ex_ptr_t));
 
         ex_protect_ptr(coro->err_allocated, ptr, func);
         coro->err_protected = true;
@@ -63,16 +63,16 @@ void_t co_calloc_full(co_routine_t *coro, int count, size_t size, func_t func) {
     return ptr;
 }
 
-CO_FORCE_INLINE void_t co_new_by(int count, size_t size) {
-    return co_calloc_full(co_active(), count, size, CO_FREE);
+ZE_FORCE_INLINE void_t co_new_by(int count, size_t size) {
+    return co_calloc_full(co_active(), count, size, ZE_FREE);
 }
 
-CO_FORCE_INLINE void_t co_new(size_t size) {
-    return co_malloc_full(co_active(), size, CO_FREE);
+ZE_FORCE_INLINE void_t co_new(size_t size) {
+    return co_malloc_full(co_active(), size, ZE_FREE);
 }
 
-void_t co_malloc(co_routine_t *coro, size_t size) {
-    return co_malloc_full(coro, size, CO_FREE);
+void_t co_malloc(routine_t *coro, size_t size) {
+    return co_malloc_full(coro, size, ZE_FREE);
 }
 
 char *co_strndup(string_t str, size_t max_len) {
@@ -85,7 +85,7 @@ char *co_strndup(string_t str, size_t max_len) {
     return dup;
 }
 
-CO_FORCE_INLINE char *co_strdup(string_t str) {
+ZE_FORCE_INLINE char *co_strdup(string_t str) {
     return co_memdup(co_active(), str, strlen(str) + 1);
 }
 
@@ -112,7 +112,7 @@ int vasprintf(char **str_p, string_t fmt, va_list ap) {
 
     // allocate buffer, with NULL terminator
     requiredSize = ((size_t)formattedLength) + 1;
-    *str_p = (char *)CO_MALLOC(requiredSize);
+    *str_p = (char *)ZE_MALLOC(requiredSize);
 
     // bail out on failed memory allocation
     if (*str_p == NULL) {
@@ -125,7 +125,7 @@ int vasprintf(char **str_p, string_t fmt, va_list ap) {
 
     // again, be paranoid
     if (actualLength != formattedLength) {
-        CO_FREE(*str_p);
+        ZE_FREE(*str_p);
         *str_p = NULL;
         errno = EOTHER;
         return -1;
@@ -158,11 +158,11 @@ char *co_sprintf(string_t fmt, ...) {
     if (UNLIKELY(len < 0))
         return NULL;
 
-    co_deferred(co_active(), CO_FREE, tmp_str);
+    co_deferred(co_active(), ZE_FREE, tmp_str);
     return tmp_str;
 }
 
-void_t co_memdup(co_routine_t *coro, const_t src, size_t len) {
+void_t co_memdup(routine_t *coro, const_t src, size_t len) {
     void_t ptr = co_malloc(coro, len);
 
     return LIKELY(ptr) ? memcpy(ptr, src, len) : NULL;

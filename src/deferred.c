@@ -14,7 +14,7 @@ int co_array_reset(co_array_t *a) {
     if (UNLIKELY(!a))
         return -EINVAL;
 
-    CO_FREE(a->base);
+    ZE_FREE(a->base);
     a->base = NULL;
     a->elements = 0;
 
@@ -46,7 +46,7 @@ void_t realloc_array(void_t optr, size_t nmemb, size_t size) {
         errno = ENOMEM;
         return NULL;
     }
-    return CO_REALLOC(optr, total_size);
+    return ZE_REALLOC(optr, total_size);
 }
 
 #endif /* HAS_REALLOC_ARRAY */
@@ -92,10 +92,10 @@ static void co_array_free(void_t data) {
     co_array_t *array = data;
 
     co_array_reset(array);
-    CO_FREE(array);
+    ZE_FREE(array);
 }
 
-co_array_t *co_array_new(co_routine_t *coro) {
+co_array_t *co_array_new(routine_t *coro) {
     co_array_t *array;
 
     array = co_malloc_full(coro, sizeof(*array), co_array_free);
@@ -105,42 +105,42 @@ co_array_t *co_array_new(co_routine_t *coro) {
     return array;
 }
 
-static CO_FORCE_INLINE void co_deferred_array_sort(defer_t *array, int (*cmp)(const_t a, const_t b)) {
+static ZE_FORCE_INLINE void co_deferred_array_sort(defer_t *array, int (*cmp)(const_t a, const_t b)) {
     co_array_sort((co_array_t *)array, sizeof(defer_func_t), cmp);
 }
 
-static CO_FORCE_INLINE defer_t *co_deferred_array_new(co_routine_t *coro) {
+static ZE_FORCE_INLINE defer_t *co_deferred_array_new(routine_t *coro) {
     return (defer_t *)co_array_new(coro);
 }
 
-static CO_FORCE_INLINE defer_func_t *co_deferred_array_append(defer_t *array) {
+static ZE_FORCE_INLINE defer_func_t *co_deferred_array_append(defer_t *array) {
     return (defer_func_t *)co_array_append((co_array_t *)array, sizeof(defer_func_t));
 }
 
-static CO_FORCE_INLINE int co_deferred_array_reset(defer_t *array) {
+static ZE_FORCE_INLINE int co_deferred_array_reset(defer_t *array) {
     return co_array_reset((co_array_t *)array);
 }
 
-static CO_FORCE_INLINE co_array_t *co_deferred_array_get_array(defer_t *array) {
+static ZE_FORCE_INLINE co_array_t *co_deferred_array_get_array(defer_t *array) {
     return (co_array_t *)array->base.base;
 }
 
-static CO_FORCE_INLINE size_t co_deferred_array_get_index(const defer_t *array, co_array_t *elem) {
-    CO_ASSERT(elem >= (co_array_t *)array->base.base);
-    CO_ASSERT(elem < (co_array_t *)array->base.base + array->base.elements);
+static ZE_FORCE_INLINE size_t co_deferred_array_get_index(const defer_t *array, co_array_t *elem) {
+    ZE_ASSERT(elem >= (co_array_t *)array->base.base);
+    ZE_ASSERT(elem < (co_array_t *)array->base.base + array->base.elements);
     return (size_t)(elem - (co_array_t *)array->base.base);
 }
 
-static CO_FORCE_INLINE co_array_t *co_deferred_array_get_element(const defer_t *array, size_t index) {
-    CO_ASSERT(index <= array->base.elements);
+static ZE_FORCE_INLINE co_array_t *co_deferred_array_get_element(const defer_t *array, size_t index) {
+    ZE_ASSERT(index <= array->base.elements);
     return &((co_array_t *)array->base.base)[ index ];
 }
 
-static CO_FORCE_INLINE size_t co_deferred_array_len(const defer_t *array) {
+static ZE_FORCE_INLINE size_t co_deferred_array_len(const defer_t *array) {
     return array->base.elements;
 }
 
-void co_deferred_run(co_routine_t *coro, size_t generation) {
+void co_deferred_run(routine_t *coro, size_t generation) {
     co_array_t *array = (co_array_t *)&coro->defer;
     defer_func_t *defers = array->base;
     size_t i;
@@ -170,31 +170,31 @@ void co_deferred_run(co_routine_t *coro, size_t generation) {
 
     array->elements = generation;
     if (coro->err_allocated != NULL){
-        CO_FREE(coro->err_allocated);
+        ZE_FREE(coro->err_allocated);
         coro->err_allocated = NULL;
     }
 }
 
-size_t co_deferred_count(const co_routine_t *coro) {
+size_t co_deferred_count(const routine_t *coro) {
     const co_array_t *array = (co_array_t *)&coro->defer;
 
     return array->elements;
 }
 
-void co_deferred_free(co_routine_t *coro) {
-    CO_ASSERT(coro);
+void co_deferred_free(routine_t *coro) {
+    ZE_ASSERT(coro);
     co_deferred_run(coro, 0);
     co_deferred_array_reset(&coro->defer);
 }
 
-static void co_deferred_any(co_routine_t *coro, func_t func, void_t data, void_t check) {
+static void co_deferred_any(routine_t *coro, func_t func, void_t data, void_t check) {
     defer_func_t *defer;
 
-    CO_ASSERT(func);
+    ZE_ASSERT(func);
 
     defer = co_deferred_array_append(&coro->defer);
     if (UNLIKELY(!defer)) {
-        CO_LOG("Could not add new deferred function.");
+        ZE_LOG("Could not add new deferred function.");
     } else {
         defer->func = func;
         defer->data = data;
@@ -202,20 +202,20 @@ static void co_deferred_any(co_routine_t *coro, func_t func, void_t data, void_t
     }
 }
 
-CO_FORCE_INLINE void co_defer(func_t func, void_t data) {
+ZE_FORCE_INLINE void co_defer(func_t func, void_t data) {
     co_deferred(co_active(), func, data);
 }
 
-CO_FORCE_INLINE void co_defer_recover(func_t func, void_t data) {
+ZE_FORCE_INLINE void co_defer_recover(func_t func, void_t data) {
     co_deferred_any(co_active(), func, data, (void_t)"err");
 }
 
 string_t co_recover() {
-    co_routine_t *co = co_active();
+    routine_t *co = co_active();
     co->err_recovered = true;
     return (co->panic != NULL) ? co->panic : co->err;
 }
 
-void co_deferred(co_routine_t *coro, func_t func, void_t data) {
+void co_deferred(routine_t *coro, func_t func, void_t data) {
     co_deferred_any(coro, func, data, NULL);
 }

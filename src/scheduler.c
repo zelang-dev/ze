@@ -2,15 +2,15 @@
 
 /* Store/hold the registers of the default coroutine thread state,
 allows the ability to switch from any function, non coroutine context. */
-static thread_local co_routine_t co_active_buffer[4];
+static thread_local routine_t co_active_buffer[4];
 /* Variable holding the current running coroutine per thread. */
-static thread_local co_routine_t *co_active_handle = NULL;
+static thread_local routine_t *co_active_handle = NULL;
 /* Variable holding the main target that gets called once an coroutine
 function fully completes and return. */
-static thread_local co_routine_t *co_main_handle = NULL;
+static thread_local routine_t *co_main_handle = NULL;
 /* Variable holding the previous running coroutine per thread. */
-static thread_local co_routine_t *co_current_handle = NULL;
-static void(fastcall *co_swap)(co_routine_t *, co_routine_t *) = 0;
+static thread_local routine_t *co_current_handle = NULL;
+static void(fastcall *co_swap)(routine_t *, routine_t *) = 0;
 
 static thread_local uv_loop_t *co_main_loop_handle = NULL;
 
@@ -33,13 +33,13 @@ thread_local int n_co_switched;
 thread_local int coroutine_count;
 
 /* record which coroutine is executing for scheduler */
-thread_local co_routine_t *co_running;
+thread_local routine_t *co_running;
 
 /* coroutines's FIFO scheduler queue */
 thread_local co_scheduler_t co_run_queue;
 
 /* scheduler tracking for all coroutines */
-co_routine_t **all_coroutine;
+routine_t **all_coroutine;
 
 int n_all_coroutine;
 
@@ -47,10 +47,10 @@ int coroutine_loop(int);
 void coroutine_interrupt(void);
 
 /* Initializes new coroutine, platform specific. */
-co_routine_t *co_derive(void_t, size_t);
+routine_t *co_derive(void_t, size_t);
 
 /* Create new coroutine. */
-co_routine_t *co_create(size_t, callable_t, void_t);
+routine_t *co_create(size_t, callable_t, void_t);
 
 /* Create a new coroutine running func(arg) with stack size. */
 int coroutine_create(callable_t, void_t, unsigned int);
@@ -68,18 +68,18 @@ void coroutine_state(char *, ...);
 /* Returns the current coroutine's state name. */
 char *coroutine_get_state(void);
 
-/* called only if co_routine_t func returns */
+/* called only if routine_t func returns */
 static void co_done() {
     if (!co_active()->loop_active) {
         co_active()->halt = true;
-        co_active()->status = CO_DEAD;
+        co_active()->status = ZE_DEAD;
     }
 
     co_scheduler();
 }
 
 static void co_awaitable() {
-    co_routine_t *co = co_active();
+    routine_t *co = co_active();
     try {
         if (co->loop_active) {
             co->func(co->args);
@@ -93,9 +93,9 @@ static void co_awaitable() {
             rethrow();
     } finally {
         if (co->loop_active)
-            co->status = CO_EVENT;
+            co->status = ZE_EVENT;
         else
-            co->status = CO_NORMAL;
+            co->status = ZE_NORMAL;
     } end_try;
 }
 
@@ -105,11 +105,11 @@ static void co_func() {
 }
 
 /* Utility for aligning addresses. */
-static CO_FORCE_INLINE size_t _co_align_forward(size_t addr, size_t align) {
+static ZE_FORCE_INLINE size_t _co_align_forward(size_t addr, size_t align) {
     return (addr + (align - 1)) & ~(align - 1);
 }
 
-static CO_FORCE_INLINE int co_deferred_array_init(defer_t *array) {
+static ZE_FORCE_INLINE int co_deferred_array_init(defer_t *array) {
     return co_array_init((co_array_t *)array);
 }
 
@@ -120,7 +120,7 @@ uv_loop_t *co_loop() {
     return uv_default_loop();
 }
 
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
 alignas(4096)
 #else
 section(text)
@@ -146,19 +146,19 @@ static const unsigned char co_swap_function[ 4096 ] = {
 #ifdef _WIN32
 #include <windows.h>
 static void co_init(void) {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     DWORD old_privileges;
     VirtualProtect((void_t)co_swap_function, sizeof co_swap_function, PAGE_EXECUTE_READ, &old_privileges);
 #endif
 }
 #else
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
 #include <unistd.h>
 #include <sys/mman.h>
 #endif
 
 static void co_init(void) {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     unsigned long addr = (unsigned long)co_swap_function;
     unsigned long base = addr - (addr % sysconf(_SC_PAGESIZE));
     unsigned long size = (addr - base) + sizeof co_swap_function;
@@ -167,14 +167,14 @@ static void co_init(void) {
 }
 #endif
 
-co_routine_t *co_derive(void_t memory, size_t size) {
-    co_routine_t *handle;
+routine_t *co_derive(void_t memory, size_t size) {
+    routine_t *handle;
     if (!co_swap) {
         co_init();
-        co_swap = (void(fastcall *)(co_routine_t *, co_routine_t *))co_swap_function;
+        co_swap = (void(fastcall *)(routine_t *, routine_t *))co_swap_function;
     }
 
-    if ((handle = (co_routine_t *)memory)) {
+    if ((handle = (routine_t *)memory)) {
         unsigned long stack_top = (unsigned long)handle + size;
         stack_top -= 32;
         stack_top &= ~((unsigned long)15);
@@ -183,8 +183,8 @@ co_routine_t *co_derive(void_t memory, size_t size) {
         *--p = (long)co_awaitable;     /* start of function */
         *(long *)handle = (long)p;     /* stack pointer */
 
-#ifdef CO_USE_VALGRIND
-        size_t stack_addr = _co_align_forward((size_t)handle + sizeof(co_routine_t), 16);
+#ifdef ZE_USE_VALGRIND
+        size_t stack_addr = _co_align_forward((size_t)handle + sizeof(routine_t), 16);
         handle->vg_stack_id = VALGRIND_STACK_REGISTER(stack_addr, stack_addr + size);
 #endif
     }
@@ -208,7 +208,7 @@ static const unsigned char co_swap_function[ 4096 ] = {
     0x4c, 0x89, 0x6a, 0xb0,       /* mov [rdx-0x50],r13      */
     0x4c, 0x89, 0x72, 0xb8,       /* mov [rdx-0x48],r14      */
     0x4c, 0x89, 0x7a, 0xc0,       /* mov [rdx-0x40],r15      */
-#if !defined(CO_NO_SSE)
+#if !defined(ZE_NO_SSE)
         0x0f, 0x29, 0x72, 0xd0,       /* movaps [rdx-0x30],xmm6  */
         0x0f, 0x29, 0x7a, 0xe0,       /* movaps [rdx-0x20],xmm7  */
         0x44, 0x0f, 0x29, 0x42, 0xf0, /* movaps [rdx-0x10],xmm8  */
@@ -228,7 +228,7 @@ static const unsigned char co_swap_function[ 4096 ] = {
         0x4c, 0x8b, 0x69, 0xb0,       /* mov r13,[rcx-0x50]      */
         0x4c, 0x8b, 0x71, 0xb8,       /* mov r14,[rcx-0x48]      */
         0x4c, 0x8b, 0x79, 0xc0,       /* mov r15,[rcx-0x40]      */
-#if !defined(CO_NO_SSE)
+#if !defined(ZE_NO_SSE)
         0x0f, 0x28, 0x71, 0xd0,       /* movaps xmm6, [rcx-0x30] */
         0x0f, 0x28, 0x79, 0xe0,       /* movaps xmm7, [rcx-0x20] */
         0x44, 0x0f, 0x28, 0x41, 0xf0, /* movaps xmm8, [rcx-0x10] */
@@ -240,7 +240,7 @@ static const unsigned char co_swap_function[ 4096 ] = {
         0x44, 0x0f, 0x28, 0x71, 0x50, /* movaps xmm14,[rcx+0x50] */
         0x44, 0x0f, 0x28, 0x79, 0x60, /* movaps xmm15,[rcx+0x60] */
 #endif
-#if !defined(CO_NO_TIB)
+#if !defined(ZE_NO_TIB)
         0x65, 0x4c, 0x8b, 0x04, 0x25, /* mov r8,gs:0x30          */
         0x30, 0x00, 0x00, 0x00,
         0x41, 0x0f, 0x10, 0x40, 0x08, /* movups xmm0,[r8+0x8]    */
@@ -254,7 +254,7 @@ static const unsigned char co_swap_function[ 4096 ] = {
 #include <windows.h>
 
 static void co_init(void) {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     DWORD old_privileges;
     VirtualProtect((void_t)co_swap_function, sizeof co_swap_function, PAGE_EXECUTE_READ, &old_privileges);
 #endif
@@ -280,13 +280,13 @@ static const unsigned char co_swap_function[ 4096 ] = {
     0xff, 0xe0,             /* jmp rax          */
 };
 
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
 #include <unistd.h>
 #include <sys/mman.h>
 #endif
 
 static void co_init(void) {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     unsigned long long addr = (unsigned long long)co_swap_function;
     unsigned long long base = addr - (addr % sysconf(_SC_PAGESIZE));
     unsigned long long size = (addr - base) + sizeof co_swap_function;
@@ -294,14 +294,14 @@ static void co_init(void) {
 #endif
 }
 #endif
-co_routine_t *co_derive(void_t memory, size_t size) {
-    co_routine_t *handle;
+routine_t *co_derive(void_t memory, size_t size) {
+    routine_t *handle;
     if (!co_swap) {
         co_init();
-        co_swap = (void (*)(co_routine_t *, co_routine_t *))co_swap_function;
+        co_swap = (void (*)(routine_t *, routine_t *))co_swap_function;
     }
 
-    if ((handle = (co_routine_t *)memory)) {
+    if ((handle = (routine_t *)memory)) {
         size_t stack_top = (size_t)handle + size;
         stack_top -= 32;
         stack_top &= ~((size_t)15);
@@ -309,13 +309,13 @@ co_routine_t *co_derive(void_t memory, size_t size) {
         *--p = (int64_t)co_done;               /* if coroutine returns */
         *--p = (int64_t)co_awaitable;
         *(int64_t *)handle = (int64_t)p;                  /* stack pointer */
-#if defined(_WIN32) && !defined(CO_NO_TIB)
+#if defined(_WIN32) && !defined(ZE_NO_TIB)
         ((int64_t *)handle)[ 30 ] = (int64_t)handle + size; /* stack base */
         ((int64_t *)handle)[ 31 ] = (int64_t)handle;        /* stack limit */
 #endif
 
-#ifdef CO_USE_VALGRIND
-        size_t stack_addr = _co_align_forward((size_t)handle + sizeof(co_routine_t), 16);
+#ifdef ZE_USE_VALGRIND
+        size_t stack_addr = _co_align_forward((size_t)handle + sizeof(routine_t), 16);
         handle->vg_stack_id = VALGRIND_STACK_REGISTER(stack_addr, stack_addr + size);
 #endif
     }
@@ -324,7 +324,7 @@ co_routine_t *co_derive(void_t memory, size_t size) {
 }
 #elif defined(__clang__) || defined(__GNUC__)
 #if defined(__arm__)
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
 #include <unistd.h>
 #include <sys/mman.h>
 #endif
@@ -336,7 +336,7 @@ static const size_t co_swap_function[ 1024 ] = {
 };
 
 static void co_init(void) {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     size_t addr = (size_t)co_swap_function;
     size_t base = addr - (addr % sysconf(_SC_PAGESIZE));
     size_t size = (addr - base) + sizeof co_swap_function;
@@ -344,12 +344,12 @@ static void co_init(void) {
 #endif
 }
 
-co_routine_t *co_derive(void_t memory, size_t size) {
+routine_t *co_derive(void_t memory, size_t size) {
     size_t *handle;
-    co_routine_t *co;
+    routine_t *co;
     if (!co_swap) {
         co_init();
-        co_swap = (void (*)(co_routine_t *, co_routine_t *))co_swap_function;
+        co_swap = (void (*)(routine_t *, routine_t *))co_swap_function;
     }
 
     if ((handle = (size_t *)memory)) {
@@ -359,9 +359,9 @@ co_routine_t *co_derive(void_t memory, size_t size) {
         handle[ 8 ] = (size_t)p;
         handle[ 9 ] = (size_t)co_func;
 
-        co = (co_routine_t *)handle;
-#ifdef CO_USE_VALGRIND
-        size_t stack_addr = _co_align_forward((size_t)co + sizeof(co_routine_t), 16);
+        co = (routine_t *)handle;
+#ifdef ZE_USE_VALGRIND
+        size_t stack_addr = _co_align_forward((size_t)co + sizeof(routine_t), 16);
         co->vg_stack_id = VALGRIND_STACK_REGISTER(stack_addr, stack_addr + size);
 #endif
     }
@@ -394,7 +394,7 @@ static const uint32_t co_swap_function[ 1024 ] = {
     0x6d49340c, /* ldp d12,d13,[x0,144] */
     0x6d0a3c2e, /* stp d14,d15,[x1,160] */
     0x6d4a3c0e, /* ldp d14,d15,[x0,160] */
-#if defined(_WIN32) && !defined(CO_NO_TIB)
+#if defined(_WIN32) && !defined(ZE_NO_TIB)
     0xa940c650, /* ldp x16,x17,[x18, 8] */
     0xa90b4430, /* stp x16,x17,[x1,176] */
     0xa94b4410, /* ldp x16,x17,[x0,176] */
@@ -407,19 +407,19 @@ static const uint32_t co_swap_function[ 1024 ] = {
 #include <windows.h>
 
 static void co_init() {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     DWORD old_privileges;
     VirtualProtect((void_t)co_swap_function, sizeof co_swap_function, PAGE_EXECUTE_READ, &old_privileges);
 #endif
 }
 #else
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
 #include <unistd.h>
 #include <sys/mman.h>
 #endif
 
 static void co_init(void) {
-#ifdef CO_MPROTECT
+#ifdef ZE_MPROTECT
     size_t addr = (size_t)co_swap_function;
     size_t base = addr - (addr % sysconf(_SC_PAGESIZE));
     size_t size = (addr - base) + sizeof co_swap_function;
@@ -428,12 +428,12 @@ static void co_init(void) {
 }
 #endif
 
-co_routine_t *co_derive(void_t memory, size_t size) {
+routine_t *co_derive(void_t memory, size_t size) {
     size_t *handle;
-    co_routine_t *co;
+    routine_t *co;
     if (!co_swap) {
         co_init();
-        co_swap = (void (*)(co_routine_t *, co_routine_t *))co_swap_function;
+        co_swap = (void (*)(routine_t *, routine_t *))co_swap_function;
     }
 
     if ((handle = (size_t *)memory)) {
@@ -444,14 +444,14 @@ co_routine_t *co_derive(void_t memory, size_t size) {
         handle[ 1 ] = (size_t)co_func;        /* x30 (link register) */
         handle[ 12 ] = (size_t)p;             /* x29 (frame pointer) */
 
-#if defined(_WIN32) && !defined(CO_NO_TIB)
+#if defined(_WIN32) && !defined(ZE_NO_TIB)
         handle[ 22 ] = (size_t)handle + size; /* stack base */
         handle[ 23 ] = (size_t)handle;        /* stack limit */
 #endif
 
-        co = (co_routine_t *)handle;
-#ifdef CO_USE_VALGRIND
-        size_t stack_addr = _co_align_forward((size_t)co + sizeof(co_routine_t), 16);
+        co = (routine_t *)handle;
+#ifdef ZE_USE_VALGRIND
+        size_t stack_addr = _co_align_forward((size_t)co + sizeof(routine_t), 16);
         co->vg_stack_id = VALGRIND_STACK_REGISTER(stack_addr, stack_addr + size);
 #endif
     }
@@ -466,7 +466,7 @@ co_routine_t *co_derive(void_t memory, size_t size) {
 #define MIN_STACK_FRAME 0x20lu
 #define STACK_ALIGN 0x10lu
 
-void swap_context(co_routine_t *read, co_routine_t *write);
+void swap_context(routine_t *read, routine_t *write);
 __asm__(
     ".text\n"
     ".align 4\n"
@@ -650,11 +650,11 @@ __asm__(
     ".cfi_endproc\n"
     ".size swap_context, .-swap_context\n");
 
-co_routine_t *co_derive(void_t memory, size_t size) {
+routine_t *co_derive(void_t memory, size_t size) {
     uint8_t *sp;
-    co_routine_t *context = (co_routine_t *)memory;
+    routine_t *context = (routine_t *)memory;
     if (!co_swap) {
-        co_swap = (void (*)(co_routine_t *, co_routine_t *))swap_context;
+        co_swap = (void (*)(routine_t *, routine_t *))swap_context;
     }
 
     /* save current context into new context to initialize it */
@@ -676,8 +676,8 @@ co_routine_t *co_derive(void_t memory, size_t size) {
     context->gprs[ 12 ] = (uint64_t)co_func;
     context->lr = (uint64_t)co_func;
 
-#ifdef CO_USE_VALGRIND
-    size_t stack_addr = _co_align_forward((size_t)context + sizeof(co_routine_t), 16);
+#ifdef ZE_USE_VALGRIND
+    size_t stack_addr = _co_align_forward((size_t)context + sizeof(routine_t), 16);
     context->vg_stack_id = VALGRIND_STACK_REGISTER(stack_addr, stack_addr + size);
 #endif
     return context;
@@ -735,7 +735,7 @@ int makecontext(ucontext_t *ucp, void (*func)(), int argc, ...) {
     return 0;
 }
 
-int swapcontext(co_routine_t *oucp, const co_routine_t *ucp) {
+int swapcontext(routine_t *oucp, const routine_t *ucp) {
     int ret;
 
     if ((oucp == NULL) || (ucp == NULL)) {
@@ -752,13 +752,13 @@ int swapcontext(co_routine_t *oucp, const co_routine_t *ucp) {
 #endif
 
 #if defined(USE_OTHER)
-co_routine_t *co_derive(void_t memory, size_t size) {
+routine_t *co_derive(void_t memory, size_t size) {
     if (!co_active_handle)
         co_active_handle = co_active_buffer;
 
     ucontext_t *thread = (ucontext_t *)memory;
-    memory = (unsigned char *)memory + sizeof(co_routine_t);
-    size -= sizeof(co_routine_t);
+    memory = (unsigned char *)memory + sizeof(routine_t);
+    size -= sizeof(routine_t);
     if ((!getcontext(thread) && !(thread->uc_stack.ss_sp = 0)) && (thread->uc_stack.ss_sp = memory)) {
         thread->uc_link = (ucontext_t *)co_active_handle;
         thread->uc_stack.ss_size = size;
@@ -767,54 +767,54 @@ co_routine_t *co_derive(void_t memory, size_t size) {
         co_panic("getcontext failed!");
     }
 
-    return (co_routine_t *)thread;
+    return (routine_t *)thread;
 }
 #endif
 
-co_routine_t *co_active(void) {
+routine_t *co_active(void) {
     if (!co_active_handle)
         co_active_handle = co_active_buffer;
     return co_active_handle;
 }
 
-co_routine_t *co_current(void) {
+routine_t *co_current(void) {
     return co_current_handle;
 }
 
-co_routine_t *co_coroutine(void) {
+routine_t *co_coroutine(void) {
     return co_running;
 }
 
-CO_FORCE_INLINE void co_scheduler() {
+ZE_FORCE_INLINE void co_scheduler() {
     co_switch(co_main_handle);
 }
 
 void co_stack_check(int n) {
-    co_routine_t *t;
+    routine_t *t;
 
     t = co_running;
-    if ((char *)&t <= (char *)t->stack_base || (char *)&t - (char *)t->stack_base < 256 + n || t->magic_number != CO_MAGIC_NUMBER) {
+    if ((char *)&t <= (char *)t->stack_base || (char *)&t - (char *)t->stack_base < 256 + n || t->magic_number != ZE_MAGIC_NUMBER) {
         snprintf(ex_message, 256, "coroutine stack overflow: &t=%p stack=%p n=%d\n", &t, t->stack_base, 256 + n);
         co_panic(ex_message);
     }
 }
 
-co_routine_t *co_create(size_t size, callable_t func, void_t args) {
+routine_t *co_create(size_t size, callable_t func, void_t args) {
     if (size != 0) {
-        /* Stack size should be at least `CO_STACK_SIZE`. */
-        if (size < CO_STACK_SIZE) {
-            size = CO_STACK_SIZE;
+        /* Stack size should be at least `ZE_STACK_SIZE`. */
+        if (size < ZE_STACK_SIZE) {
+            size = ZE_STACK_SIZE;
         }
     } else {
-        size = CO_STACK_SIZE;
+        size = ZE_STACK_SIZE;
     }
 
-    size = _co_align_forward(size + sizeof(co_routine_t), 16); /* Stack size should be aligned to 16 bytes. */
-    void_t memory = CO_CALLOC(1, size + sizeof(channel_t) + sizeof(co_value_t));
+    size = _co_align_forward(size + sizeof(routine_t), 16); /* Stack size should be aligned to 16 bytes. */
+    void_t memory = ZE_CALLOC(1, size + sizeof(channel_t) + sizeof(values_t));
     if (!memory)
         co_panic("calloc() failed");
 
-    co_routine_t *co = co_derive(memory, size);
+    routine_t *co = co_derive(memory, size);
     if (!co_current_handle)
         co_current_handle = co_active();
 
@@ -823,7 +823,7 @@ co_routine_t *co_create(size_t size, callable_t func, void_t args) {
 
 #ifdef UV_H
     if (!co_main_loop_handle) {
-        co_main_loop_handle = CO_CALLOC(1, sizeof(uv_loop_t));
+        co_main_loop_handle = ZE_CALLOC(1, sizeof(uv_loop_t));
         int r = uv_loop_init(co_main_loop_handle);
         if (r)
             fprintf(stderr, "Event loop creation failed in file %s at line # %d", __FILE__, __LINE__);
@@ -831,13 +831,13 @@ co_routine_t *co_create(size_t size, callable_t func, void_t args) {
 #endif
 
     if (UNLIKELY(co_deferred_array_init(&co->defer) < 0)) {
-        CO_FREE(co);
-        return (co_routine_t *)-1;
+        ZE_FREE(co);
+        return (routine_t *)-1;
     }
 
     co->func = func;
-    co->status = CO_SUSPENDED;
-    co->stack_size = size + sizeof(channel_t) + sizeof(co_value_t);
+    co->status = ZE_SUSPENDED;
+    co->stack_size = size + sizeof(channel_t) + sizeof(values_t);
     co->channeled = false;
     co->halt = false;
     co->synced = false;
@@ -846,22 +846,22 @@ co_routine_t *co_create(size_t size, callable_t func, void_t args) {
     co->loop_active = false;
     co->args = args;
     co->results = NULL;
-    co->magic_number = CO_MAGIC_NUMBER;
+    co->magic_number = ZE_MAGIC_NUMBER;
     co->stack_base = (unsigned char *)(co + 1);
 
     return co;
 }
 
-void co_switch(co_routine_t *handle) {
+void co_switch(routine_t *handle) {
 #if defined(_M_X64) || defined(_M_IX86)
-    register co_routine_t *co_previous_handle = co_active_handle;
+    register routine_t *co_previous_handle = co_active_handle;
 #else
-    co_routine_t *co_previous_handle = co_active_handle;
+    routine_t *co_previous_handle = co_active_handle;
 #endif
     co_active_handle = handle;
-    co_active_handle->status = CO_RUNNING;
+    co_active_handle->status = ZE_RUNNING;
     co_current_handle = co_previous_handle;
-    co_current_handle->status = CO_NORMAL;
+    co_current_handle->status = ZE_NORMAL;
 #if !defined(USE_UCONTEXT)
     co_swap(co_active_handle, co_previous_handle);
 #else
@@ -870,7 +870,7 @@ void co_switch(co_routine_t *handle) {
 }
 
 /* Add coroutine to scheduler queue, appending. */
-static void coroutine_add(co_scheduler_t *l, co_routine_t *t) {
+static void coroutine_add(co_scheduler_t *l, routine_t *t) {
     if (l->tail) {
         l->tail->next = t;
         t->prev = l->tail;
@@ -884,7 +884,7 @@ static void coroutine_add(co_scheduler_t *l, co_routine_t *t) {
 }
 
 /* Remove coroutine from scheduler queue. */
-static void coroutine_remove(co_scheduler_t *l, co_routine_t *t) {
+static void coroutine_remove(co_scheduler_t *l, routine_t *t) {
     if (t->prev)
         t->prev->next = t->next;
     else
@@ -898,15 +898,15 @@ static void coroutine_remove(co_scheduler_t *l, co_routine_t *t) {
 
 int coroutine_create(callable_t fn, void_t arg, unsigned int stack) {
     int id;
-    co_routine_t *t;
-    co_routine_t *c = co_active();
+    routine_t *t;
+    routine_t *c = co_active();
 
     t = co_create(stack, fn, arg);
     t->cid = ++co_id_generate;
     coroutine_count++;
     id = t->cid;
     if (n_all_coroutine % 64 == 0) {
-        all_coroutine = CO_REALLOC(all_coroutine, (n_all_coroutine + 64) * sizeof(all_coroutine[ 0 ]));
+        all_coroutine = ZE_REALLOC(all_coroutine, (n_all_coroutine + 64) * sizeof(all_coroutine[ 0 ]));
         if (all_coroutine == NULL)
             co_panic("realloc() failed");
     }
@@ -918,7 +918,7 @@ int coroutine_create(callable_t fn, void_t arg, unsigned int stack) {
 
     if (c->wait_active && c->wait_group != NULL) {
         t->synced = true;
-        co_hash_put(c->wait_group, co_itoa(id), t);
+        hash_put(c->wait_group, co_itoa(id), t);
         c->wait_counter++;
     }
 
@@ -931,8 +931,8 @@ int coroutine_create(callable_t fn, void_t arg, unsigned int stack) {
     return id;
 }
 
-CO_FORCE_INLINE int co_go(callable_t fn, void_t arg) {
-    return coroutine_create(fn, arg, CO_STACK_SIZE);
+ZE_FORCE_INLINE int co_go(callable_t fn, void_t arg) {
+    return coroutine_create(fn, arg, ZE_STACK_SIZE);
 }
 
 void co_pause() {
@@ -940,8 +940,8 @@ void co_pause() {
     co_suspend();
 }
 
-CO_FORCE_INLINE void co_execute(func_t fn, void_t arg) {
-    coroutine_create((callable_t)fn, arg, CO_STACK_SIZE);
+ZE_FORCE_INLINE void co_execute(func_t fn, void_t arg) {
+    coroutine_create((callable_t)fn, arg, ZE_STACK_SIZE);
     co_pause();
 }
 
@@ -954,17 +954,17 @@ static size_t nsec(void) {
     return (size_t)tv.tv_sec * 1000 * 1000 * 1000 + tv.tv_usec * 1000;
 }
 
-CO_FORCE_INLINE int coroutine_loop(int mode) {
-    return CO_EVENT_LOOP(co_loop(), mode);
+ZE_FORCE_INLINE int coroutine_loop(int mode) {
+    return ZE_EVENT_LOOP(co_loop(), mode);
 }
 
-CO_FORCE_INLINE void coroutine_interrupt(void) {
+ZE_FORCE_INLINE void coroutine_interrupt(void) {
     coroutine_loop(UV_RUN_NOWAIT);
 }
 
 static void_t coroutine_wait(void_t v) {
     int ms;
-    co_routine_t *t;
+    routine_t *t;
     size_t now;
 
     coroutine_system();
@@ -1001,11 +1001,11 @@ static void_t coroutine_wait(void_t v) {
 
 unsigned int co_sleep(unsigned int ms) {
     size_t when, now;
-    co_routine_t *t;
+    routine_t *t;
 
     if (!started_wait) {
         started_wait = 1;
-        coroutine_create(coroutine_wait, 0, CO_STACK_SIZE);
+        coroutine_create(coroutine_wait, 0, ZE_STACK_SIZE);
     }
 
     now = nsec();
@@ -1041,7 +1041,7 @@ unsigned int co_sleep(unsigned int ms) {
     return (unsigned int)(nsec() - now) / 1000000;
 }
 
-void coroutine_schedule(co_routine_t *t) {
+void coroutine_schedule(routine_t *t) {
     t->ready = 1;
     coroutine_add(&co_run_queue, t);
 }
@@ -1061,7 +1061,7 @@ bool coroutine_active() {
 
 void coroutine_state(char *fmt, ...) {
     va_list args;
-    co_routine_t *t;
+    routine_t *t;
 
     t = co_running;
     va_start(args, fmt);
@@ -1075,7 +1075,7 @@ char *coroutine_get_state() {
 
 void coroutine_name(char *fmt, ...) {
     va_list args;
-    co_routine_t *t;
+    routine_t *t;
 
     t = co_running;
     va_start(args, fmt);
@@ -1103,7 +1103,7 @@ void coroutine_exit(int val) {
 
 void coroutine_info() {
     int i;
-    co_routine_t *t;
+    routine_t *t;
     char *extra;
 
     fprintf(stderr, "coroutine list:\n");
@@ -1126,14 +1126,14 @@ void coroutine_info() {
 static void coroutine_scheduler(void) {
     int i;
     bool is_loop_close;
-    co_routine_t *t;
+    routine_t *t;
 
     for (;;) {
         if (coroutine_count == 0 || !coroutine_active()) {
 #ifdef UV_H
             if (co_main_loop_handle != NULL) {
                 uv_loop_close(co_main_loop_handle);
-                CO_FREE(co_main_loop_handle);
+                ZE_FREE(co_main_loop_handle);
             }
 #endif
             gc_channel_free();
@@ -1146,16 +1146,16 @@ static void coroutine_scheduler(void) {
                 for (int i = 0; i < (n_all_coroutine + (coroutine_count != 0)); i++) {
                     t = all_coroutine[ n_all_coroutine - i ];
                     if (t)
-                        CO_FREE(t);
+                        ZE_FREE(t);
                 }
             }
 
-            CO_FREE(all_coroutine);
+            ZE_FREE(all_coroutine);
             if (coroutine_count > 0) {
                 fprintf(stderr, "No runnable coroutines! %d stalled\n", coroutine_count);
                 exit(1);
             } else {
-                CO_LOG("Coroutine scheduler exited");
+                ZE_LOG("Coroutine scheduler exited");
                 exit(exiting);
             }
         }
@@ -1165,14 +1165,14 @@ static void coroutine_scheduler(void) {
         t->ready = 0;
         co_running = t;
         n_co_switched++;
-        CO_INFO("Thread #%lx running coroutine id: %d (%s) status: %d\n", co_async_self(), t->cid,
+        ZE_INFO("Thread #%lx running coroutine id: %d (%s) status: %d\n", co_async_self(), t->cid,
                 ((t->name != NULL && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"),
                 t->status);
         coroutine_interrupt();
-        is_loop_close = (t->status > CO_EVENT || t->status < 0);
+        is_loop_close = (t->status > ZE_EVENT || t->status < 0);
         if (!is_loop_close && !t->halt)
             co_switch(t);
-        CO_LOG("Back at coroutine scheduling");
+        ZE_LOG("Back at coroutine scheduling");
         co_running = NULL;
         if (t->halt || t->exiting) {
             if (!t->system)
@@ -1199,7 +1199,7 @@ int main(int argc, char **argv) {
     main_argc = argc;
     main_argv = argv;
     ex_signal_setup();
-    coroutine_create(coroutine_main, NULL, CO_MAIN_STACK);
+    coroutine_create(coroutine_main, NULL, ZE_MAIN_STACK);
     coroutine_scheduler();
     fprintf(stderr, "Coroutine scheduler returned to main, when it shouldn't have!");
     return exiting;
