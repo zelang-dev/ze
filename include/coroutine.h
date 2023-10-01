@@ -57,9 +57,9 @@
     #define ZE_INFO(s, ...) printf(s, __VA_ARGS__ )
     #define ZE_HERE() fprintf(stderr, "Here %s:%d\n", __FILE__, __LINE__)
 #else
-    #define ZE_LOG(s)
-    #define ZE_INFO(s, ...)
-    #define ZE_HERE()
+    #define ZE_LOG(s) (void)s;
+    #define ZE_INFO(s, ...) (void)s;
+    #define ZE_HERE() (void)0;
 #endif
 
 /* Stack size when creating a coroutine. */
@@ -575,6 +575,9 @@ typedef struct uv_args_s
     /* allocated array of arguments */
     values_t *args;
     routine_t *context;
+    string buffer;
+    uv_buf_t bufs;
+    uv_stat_t stat[1];
 
     bool is_path;
     uv_fs_type fs_type;

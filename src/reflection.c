@@ -183,132 +183,110 @@ ZE_FORCE_INLINE void reflect_get_field(reflect_type_t *variable, int slot, void_
 
 
 ze_func(var_t,
-             (PTR, void_t, value)
+        (PTR, void_t, value)
 )
 ze_func(co_array_t,
-             (PTR, void_t, base), (MAXSIZE, size_t, elements)
+        (PTR, void_t, base), (MAXSIZE, size_t, elements)
 )
 ze_func(defer_t,
-             (STRUCT, co_array_t, base)
+        (STRUCT, co_array_t, base)
 )
 ze_func(defer_func_t,
-             (FUNC, func_t, func), (PTR, void_t, data), (PTR, void_t, check)
+        (FUNC, func_t, func), (PTR, void_t, data), (PTR, void_t, check)
 )
 ze_func(promise,
-             (STRUCT, values_t *, result), (STRUCT, pthread_mutex_t, mutex),
-             (STRUCT, pthread_cond_t, cond),
-             (BOOL, bool, done),
-             (INTEGER, int, id)
+        (STRUCT, values_t *, result), (STRUCT, pthread_mutex_t, mutex),
+        (STRUCT, pthread_cond_t, cond),
+        (BOOL, bool, done),
+        (INTEGER, int, id)
 )
 ze_func(future,
-             (STRUCT, pthread_t, thread), (STRUCT, pthread_attr_t, attr),
-             (FUNC, callable_t, func),
-             (INTEGER, int, id),
-             (STRUCT, promise *, value)
+        (STRUCT, pthread_t, thread), (STRUCT, pthread_attr_t, attr),
+        (FUNC, callable_t, func),
+        (INTEGER, int, id),
+        (STRUCT, promise *, value)
 )
 ze_func(future_arg,
-             (FUNC, callable_t, func), (PTR, void_t, arg), (STRUCT, promise *, value)
+        (FUNC, callable_t, func), (PTR, void_t, arg), (STRUCT, promise *, value)
 )
 ze_func(co_scheduler_t,
-             (STRUCT, routine_t *, head), (STRUCT, routine_t *, tail)
+        (STRUCT, routine_t *, head), (STRUCT, routine_t *, tail)
 )
 ze_func(uv_args_t,
-             (STRUCT, values_t *, args),
-             (STRUCT, routine_t *, context),
-             (BOOL, bool, is_path),
-             (ENUM, uv_fs_type, fs_type),
-             (ENUM, uv_req_type, req_type),
-             (ENUM, uv_handle_type, handle_type),
-             (ENUM, uv_dirent_type_t, dirent_type),
-             (ENUM, uv_tty_mode_t, tty_mode),
-             (ENUM, uv_stdio_flags, stdio_flag),
-             (ENUM, uv_errno_t, errno_code),
-             (MAXSIZE, size_t, n_args)
+        (STRUCT, values_t *, args),
+        (STRUCT, routine_t *, context),
+        (STRING, string, buffer),
+        (STRUCT, uv_buf_t, bufs),
+        (STRUCT, uv_stat_t, stat, 1),
+        (BOOL, bool, is_path),
+        (ENUM, uv_fs_type, fs_type),
+        (ENUM, uv_req_type, req_type),
+        (ENUM, uv_handle_type, handle_type),
+        (ENUM, uv_dirent_type_t, dirent_type),
+        (ENUM, uv_tty_mode_t, tty_mode),
+        (ENUM, uv_stdio_flags, stdio_flag),
+        (ENUM, uv_errno_t, errno_code),
+        (MAXSIZE, size_t, n_args)
 )
 ze_func(channel_t,
-             (UINT, unsigned int, bufsize),
-             (UINT, unsigned int, elem_size),
-             (UCHAR_P, unsigned char *, buf),
-             (UINT, unsigned int, nbuf),
-             (UINT, unsigned int, off),
-             (UINT, unsigned int, id),
-             (STRUCT, values_t *, tmp),
-             (STRUCT, msg_queue_t, a_send),
-             (STRUCT, msg_queue_t, a_recv),
-             (STRING, string, name),
-             (BOOL, bool, select_ready)
+        (UINT, unsigned int, bufsize),
+        (UINT, unsigned int, elem_size),
+        (UCHAR_P, unsigned char *, buf),
+        (UINT, unsigned int, nbuf),
+        (UINT, unsigned int, off),
+        (UINT, unsigned int, id),
+        (STRUCT, values_t *, tmp),
+        (STRUCT, msg_queue_t, a_send),
+        (STRUCT, msg_queue_t, a_recv),
+        (STRING, string, name),
+        (BOOL, bool, select_ready)
 )
 ze_func(array_item_t,
-             (STRUCT, map_value_t *, value),
-             (STRUCT, array_item_t *, prev),
-             (STRUCT, array_item_t *, next),
-             (LLONG, int64_t, indic),
-             (CONST_CHAR, string_t, key)
+        (STRUCT, map_value_t *, value),
+        (STRUCT, array_item_t *, prev),
+        (STRUCT, array_item_t *, next),
+        (LLONG, int64_t, indic),
+        (CONST_CHAR, string_t, key)
 )
 ze_func(map_t,
-             (STRUCT, array_item_t *, head),
-             (STRUCT, array_item_t *, tail),
-             (STRUCT, ht_map_t *, dict),
-             (FUNC, map_value_dtor, dtor),
-             (LLONG, int64_t, indices),
-             (LLONG, int64_t, length),
-             (INTEGER, int, no_slices),
-             (STRUCT, slice_t **, slice),
-             (ENUM, value_types, item_type),
-             (ENUM, map_data_type, as),
-             (BOOL, bool, started),
-             (BOOL, bool, sliced)
+        (STRUCT, array_item_t *, head),
+        (STRUCT, array_item_t *, tail),
+        (STRUCT, ht_map_t *, dict),
+        (FUNC, map_value_dtor, dtor),
+        (LLONG, int64_t, indices),
+        (LLONG, int64_t, length),
+        (INTEGER, int, no_slices),
+        (STRUCT, slice_t **, slice),
+        (ENUM, value_types, item_type),
+        (ENUM, map_data_type, as),
+        (BOOL, bool, started),
+        (BOOL, bool, sliced)
 )
 ze_func(map_iter_t,
-             (STRUCT, map_t *, array),
-             (STRUCT, array_item_t *, item),
-             (BOOL, bool, forward)
+        (STRUCT, map_t *, array),
+        (STRUCT, array_item_t *, item),
+        (BOOL, bool, forward)
 )
 ze_func(ex_ptr_t,
-             (STRUCT, ex_ptr_t *, next),
-             (FUNC, func_t, func),
-             (OBJ, void_t *, ptr)
+        (STRUCT, ex_ptr_t *, next),
+        (FUNC, func_t, func),
+        (OBJ, void_t *, ptr)
 )
 ze_func(ex_context_t,
-             (STRUCT, ex_context_t *, next),
-             (STRUCT, ex_ptr_t *, stack),
-             (STRUCT, routine_t *, co),
-             (CONST_CHAR, volatile const char *, function),
-             (CONST_CHAR, volatile const char *, ex),
-             (CONST_CHAR, volatile const char *, file),
-             (INTEGER, int volatile, line),
-             (INTEGER, int volatile, state),
-             (INTEGER, int, unstack)
+        (STRUCT, ex_context_t *, next),
+        (STRUCT, ex_ptr_t *, stack),
+        (STRUCT, routine_t *, co),
+        (CONST_CHAR, volatile const char *, function),
+        (CONST_CHAR, volatile const char *, ex),
+        (CONST_CHAR, volatile const char *, file),
+        (INTEGER, int volatile, line),
+        (INTEGER, int volatile, state),
+        (INTEGER, int, unstack)
 )
 ze_func(object_t,
-             (PTR, void_t, value),
-             (FUNC, func_t, dtor)
+        (PTR, void_t, value),
+        (FUNC, func_t, dtor)
 )
-reflect_type_t *reflect_get_result_t() {
-    static reflect_field_t fields_info[+1 + 1] = {
-    {
-        ZE_ENUM,
-        "result_type",
-        "type",
-        sizeof(result_type),
-        ((size_t) & (((result_t *)0)->type)),
-        (result_type)-1 < (result_type)1, -1},
-    {
-        ZE_UNION,
-        "value_t *",
-        "value",
-         sizeof(value_t *),
-        ((size_t) & (((result_t *)0)->value)), 0, -1},
-    };
-
-    static reflect_type_t type_info = {
-        ZE_STRUCT,
-        ((void *)0),
-        "result_t", +1 + 1,
-        sizeof(result_t),
-        +sizeof(result_type) + sizeof(value_t *),
-        fields_info
-    };
-
-    return &type_info;
-}
+ze_func(result_t,
+        (UNION, value_t, value)
+)

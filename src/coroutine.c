@@ -29,7 +29,7 @@ void delete(void_t ptr) {
             if (is_valid(ptr))
                 ZE_FREE(ptr);
             else
-                ZE_LOG("Pointer not freed, possible double free attempt!");
+                ZE_LOG("Pointer not valid! Not freed!\nPossible double free attempted...\n");
         }
     }
 }
@@ -106,7 +106,7 @@ void co_delete(routine_t *handle) {
             if (handle->err_allocated != NULL)
                 ZE_FREE(handle->err_allocated);
 
-            if (handle->results != NULL)
+            if (&handle->results != NULL)
                 ZE_FREE(handle->results);
 
             ZE_FREE(handle);
@@ -237,11 +237,13 @@ value_t co_group_get_result(wait_result_t *wgr, int cid) {
 }
 
 void co_result_set(routine_t *co, void_t data) {
-    if (co->results != NULL)
-        ZE_FREE(co->results);
+    if (&data != NULL) {
+        if (&co->results != NULL)
+            ZE_FREE(co->results);
 
-    co->results = ZE_CALLOC(1, sizeof(values_t) + sizeof(data));
-    memcpy(co->results, &data, sizeof(data));
+        co->results = try_calloc(1, sizeof(values_t) + sizeof(data));
+        memcpy(co->results, &data, sizeof(data));
+    }
 }
 
 #if defined(_WIN32) || defined(_WIN64)

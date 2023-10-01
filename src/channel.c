@@ -3,11 +3,8 @@
 static thread_local int channel_id_generate = 0;
 
 channel_t *channel_create(int elem_size, int bufsize) {
-    channel_t *c = ZE_CALLOC(1, sizeof(channel_t) + bufsize * elem_size);
-    values_t *s = ZE_CALLOC(1, sizeof(values_t));
-
-    if (c == NULL || s == NULL)
-        co_panic("channel_create failed");
+    channel_t *c = try_calloc(1, sizeof(channel_t) + bufsize * elem_size);
+    values_t *s = try_calloc(1, sizeof(values_t));
 
     c->id = channel_id_generate++;
     c->type = ZE_CHANNEL;

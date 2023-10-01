@@ -9,6 +9,8 @@
 #define end_try ex_end_try
 #define finally ex_finally
 
+#define loop while(true)
+
 /* An macro that stops the ordinary flow of control and begins panicking,
 throws an exception of given message `issue`. */
 #define error(issue) co_panic(issue)
@@ -291,6 +293,9 @@ Must also closed out with `select_break()`. */
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+C_API void_t try_calloc(int, size_t);
+C_API void_t try_malloc(size_t);
 
 ze_proto(var_t);
 ze_proto(co_array_t);

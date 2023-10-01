@@ -24,11 +24,9 @@ static void slice_free(array_t *array) {
 }
 
 static void slice_set(slice_t *array, string_t key, map_value_t *value, int64_t index) {
-    array_item_t *item = (array_item_t *)ZE_CALLOC(1, sizeof(array_item_t));
+    array_item_t *item = (array_item_t *)try_calloc(1, sizeof(array_item_t));
     size_t copy_size = strlen(key) + 1;
-    char *result = (char *)ZE_CALLOC(1, copy_size + 1);
-    if (NULL == result)
-        co_panic("calloc() failed");
+    char *result = (char *)try_calloc(1, copy_size + 1);
 
     co_strcpy(result, key, copy_size);
 
@@ -57,7 +55,7 @@ slice_t *slice(array_t *array, int64_t start, int64_t end) {
             co_panic("realloc() failed");
     }
 
-    slice_t *slice = (slice_t *)ZE_CALLOC(1, sizeof(slice_t));
+    slice_t *slice = (slice_t *)try_calloc(1, sizeof(slice_t));
     int64_t index = 0;
     for (int64_t i = start; i < end; i++) {
         string_t key = co_itoa(i);
@@ -94,7 +92,7 @@ string_t slice_find(map_t *array, int64_t index) {
 }
 
 map_t *map_new(map_value_dtor dtor) {
-    map_t *array = (map_t *)ZE_CALLOC(1, sizeof(map_t));
+    map_t *array = (map_t *)try_calloc(1, sizeof(map_t));
     array->started = false;
     array->dtor = dtor;
     array->type = ZE_MAP_STRUCT;
@@ -103,7 +101,7 @@ map_t *map_new(map_value_dtor dtor) {
 }
 
 map_t *map_long_init() {
-    map_t *array = (map_t *)ZE_CALLOC(1, sizeof(map_t));
+    map_t *array = (map_t *)try_calloc(1, sizeof(map_t));
     array->started = false;
     array->dtor = NULL;
     array->type = ZE_MAP_STRUCT;
@@ -112,7 +110,7 @@ map_t *map_long_init() {
 }
 
 map_t *map_string_init() {
-    map_t *array = (map_t *)ZE_CALLOC(1, sizeof(map_t));
+    map_t *array = (map_t *)try_calloc(1, sizeof(map_t));
     array->started = false;
     array->dtor = NULL;
     array->type = ZE_MAP_STRUCT;
@@ -321,7 +319,7 @@ int map_push(map_t *array, void_t value) {
         array->indices++;
     }
 
-    item = (array_item_t *)ZE_CALLOC(1, sizeof(array_item_t));
+    item = (array_item_t *)try_calloc(1, sizeof(array_item_t));
     item->indic = array->indices;
     kv = (oa_pair *)hash_put(array->dict, co_itoa(item->indic), value);
     item->type = ZE_MAP_VALUE;
@@ -375,7 +373,7 @@ void map_shift(map_t *array, void_t value) {
         array->indices++;
     }
 
-    item = (array_item_t *)ZE_CALLOC(1, sizeof(array_item_t));
+    item = (array_item_t *)try_calloc(1, sizeof(array_item_t));
     item->type = ZE_MAP_VALUE;
     item->prev = NULL;
     item->next = array->head;
@@ -484,7 +482,7 @@ void map_put(map_t *array, string_t key, void_t value) {
             array->indices++;
         }
 
-        item = (array_item_t *)ZE_CALLOC(1, sizeof(array_item_t));
+        item = (array_item_t *)try_calloc(1, sizeof(array_item_t));
         item->type = ZE_MAP_VALUE;
         item->indic = array->indices;
         kv = (oa_pair *)hash_put(array->dict, key, value);
@@ -521,7 +519,7 @@ map_iter_t *iter_new(map_t *array, bool forward) {
     if (array && array->head) {
         map_iter_t *iterator;
 
-        iterator = (map_iter_t *)ZE_CALLOC(1, sizeof(map_iter_t));
+        iterator = (map_iter_t *)try_calloc(1, sizeof(map_iter_t));
         iterator->type = ZE_MAP_ITER;
         iterator->array = array;
         iterator->item = forward ? array->head : array->tail;
