@@ -1,6 +1,7 @@
 #include "../include/ze.h"
 
 static void_t fs_init(void_t);
+static void_t uv_init(void_t);
 
 static value_t fs_start(uv_args_t *uv_args, values_t *args, uv_fs_type fs_type, size_t n_args, bool is_path) {
     uv_args->args = args;
@@ -10,6 +11,71 @@ static value_t fs_start(uv_args_t *uv_args, values_t *args, uv_fs_type fs_type, 
     uv_args->is_path = is_path;
 
     return co_event(fs_init, uv_args);
+}
+
+static value_t uv_start(uv_args_t *uv_args, values_t *args, int type, size_t n_args, bool is_request) {
+    uv_args->args = args;
+    uv_args->type = ZE_EVENT_ARG;
+    uv_args->is_request = is_request;
+    if (is_request)
+        uv_args->req_type = type;
+    else
+        uv_args->handle_type = type;
+
+    uv_args->n_args = n_args;
+
+    return co_event(uv_init, uv_args);
+}
+
+static void close_cb(uv_handle_t *handle) {
+    uv_args_t *uv = (uv_args_t *)uv_handle_get_data(handle);
+    routine_t *co = uv->context;
+
+    co->halt = true;
+    co_result_set(co, NULL);
+    co_resuming(co->context);
+    co_scheduler();
+}
+
+static void write_cb(uv_write_t *req, int status) {
+    uv_args_t *uv = (uv_args_t *)uv_req_get_data((uv_req_t *)req);
+    routine_t *co = uv->context;
+    if (status < 0) {
+        fprintf(stderr, "Error: %s\n", uv_strerror(status));
+    }
+
+    co->halt = true;
+    co_result_set(co, &status);
+    co_resuming(co->context);
+    co_scheduler();
+}
+
+static void alloc_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+    uv_args_t *uv = (uv_args_t *)uv_handle_get_data(handle);
+    routine_t *co = uv->context;
+
+    buf->base = (string)co_calloc_full(co, 1, suggested_size + 1, ZE_FREE);
+    buf->len = suggested_size;
+}
+
+static void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+    uv_args_t *uv = (uv_args_t *)uv_handle_get_data((uv_handle_t *)stream);
+    routine_t *co = uv->context;
+
+    if (nread < 0) {
+        if (nread == UV_EOF)
+            co->halt = true;
+        else
+            fprintf(stderr, "Error: %s\n", uv_strerror(nread));
+
+        co_result_set(co, &nread);
+        uv_read_stop(stream);
+    } else {
+        co_result_set(co, (nread > 0 ? buf->base : NULL));
+    }
+
+    co_resuming(co->context);
+    co_scheduler();
 }
 
 static void fs_cb(uv_fs_t *req) {
@@ -42,9 +108,12 @@ static void fs_cb(uv_fs_t *req) {
             case UV_FS_FDATASYNC:
             case UV_FS_FSYNC:
             case UV_FS_OPEN:
+            case UV_FS_WRITE:
+            case UV_FS_SENDFILE:
                 break;
             case UV_FS_SCANDIR:
                 break;
+            case UV_FS_STATFS:
             case UV_FS_LSTAT:
             case UV_FS_STAT:
             case UV_FS_FSTAT:
@@ -57,10 +126,6 @@ static void fs_cb(uv_fs_t *req) {
             case UV_FS_READ:
                 override = true;
                 co_result_set(co, fs->buffer);
-                break;
-            case UV_FS_SENDFILE:
-                break;
-            case UV_FS_WRITE:
                 break;
             case UV_FS_UNKNOWN:
             case UV_FS_CUSTOM:
@@ -138,12 +203,15 @@ static void_t fs_init(void_t uv_args) {
             case UV_FS_RMDIR:
                 result = uv_fs_rmdir(uvLoop, req, path, fs_cb);
                 break;
-            case UV_FS_FSTAT:
+            case UV_FS_LSTAT:
                 n_path = var_char_ptr(args[1]);
                 result = uv_fs_lstat(uvLoop, req, path, fs_cb);
                 break;
             case UV_FS_STAT:
                 result = uv_fs_stat(uvLoop, req, path, fs_cb);
+                break;
+            case UV_FS_STATFS:
+                result = uv_fs_statfs(uvLoop, req, path, fs_cb);
                 break;
             case UV_FS_SCANDIR:
                 flags = var_int(args[1]);
@@ -223,9 +291,100 @@ static void_t fs_init(void_t uv_args) {
     return 0;
 }
 
+static void_t uv_init(void_t uv_args) {
+    uv_loop_t *uvLoop = co_loop();
+    uv_args_t *uv = (uv_args_t *)uv_args;
+    values_t *args = uv->args;
+    int result = -4083;
+
+    uv_handle_t *stream = var_cast(uv_handle_t, args[0]);
+    uv->context = co_active();
+    if (uv->is_request) {
+        uv_req_t *req;
+        switch (uv->req_type) {
+            case UV_WRITE:
+                req = co_new_by(1, sizeof(uv_write_t));
+                result = uv_write((uv_write_t *)req, (uv_stream_t *)stream, &uv->bufs, 1, write_cb);
+                break;
+            case UV_CONNECT:
+                break;
+            case UV_SHUTDOWN:
+                break;
+            case UV_UDP_SEND:
+                break;
+            case UV_WORK:
+                break;
+            case UV_GETADDRINFO:
+                break;
+            case UV_GETNAMEINFO:
+                break;
+            case UV_RANDOM:
+                break;
+            case UV_UNKNOWN_REQ:
+            default:
+                fprintf(stderr, "type; %d not supported.\n", uv->req_type);
+                break;
+        }
+
+        uv_req_set_data(req, (void_t)uv);
+    } else {
+        uv_handle_set_data(stream, (void_t)uv);
+        switch (uv->handle_type) {
+            case UV_ASYNC:
+                break;
+            case UV_CHECK:
+                break;
+            case UV_FS_EVENT:
+                break;
+            case UV_FS_POLL:
+                break;
+            case UV_IDLE:
+                break;
+            case UV_NAMED_PIPE:
+                break;
+            case UV_POLL:
+                break;
+            case UV_PREPARE:
+                break;
+            case UV_PROCESS:
+                break;
+            case UV_STREAM:
+                result = uv_read_start((uv_stream_t *)stream, alloc_cb, read_cb);
+                break;
+            case UV_TCP:
+                break;
+            case UV_HANDLE:
+                result = 0;
+                uv_close(stream, close_cb);
+                break;
+            case UV_TIMER:
+                break;
+            case UV_TTY:
+                break;
+            case UV_UDP:
+                break;
+            case UV_SIGNAL:
+                break;
+            case UV_FILE:
+                break;
+            case UV_UNKNOWN_HANDLE:
+            default:
+                fprintf(stderr, "type; %d not supported.\n", uv->handle_type);
+                break;
+        }
+    }
+
+    if (result) {
+        fprintf(stderr, "failed: %s\n", uv_strerror(result));
+        return ZE_ERROR;
+    }
+
+    return 0;
+}
+
 uv_file fs_open(string_t path, int flags, int mode) {
-    values_t *args;
-    uv_args_t *uv_args;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
 
     uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     args = (values_t *)co_new_by(3, sizeof(values_t));
@@ -238,8 +397,8 @@ uv_file fs_open(string_t path, int flags, int mode) {
 }
 
 int fs_unlink(string_t path) {
-    values_t *args;
-    uv_args_t *uv_args;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
 
     uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     args = (values_t *)co_new_by(1, sizeof(values_t));
@@ -249,8 +408,8 @@ int fs_unlink(string_t path) {
 }
 
 uv_stat_t *fs_fstat(uv_file fd) {
-    values_t *args;
-    uv_args_t *uv_args;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
 
     uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     args = (values_t *)co_new_by(1, sizeof(values_t));
@@ -272,24 +431,24 @@ int fs_fsync(uv_file fd) {
 
 string fs_read(uv_file fd, int64_t offset) {
     uv_stat_t *stat = fs_fstat(fd);
-    values_t *args;
-    uv_args_t *uv_args;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
 
     uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     uv_args->buffer = co_new_by(1, stat->st_size);
-    uv_args->bufs = uv_buf_init(uv_args->buffer, (unsigned int)stat->st_size);
+    uv_args->bufs = uv_buf_init(uv_args->buffer, stat->st_size);
 
     args = (values_t *)co_new_by(2, sizeof(values_t));
     args[0].value.integer = fd;
-    args[1].value.u_int = (unsigned int)offset;
+    args[1].value.u_int = offset;
 
     return fs_start(uv_args, args, UV_FS_READ, 2, false).char_ptr;
 }
 
 int fs_write(uv_file fd, string_t text, int64_t offset) {
     size_t size = sizeof(text) + 1;
-    values_t *args;
-    uv_args_t *uv_args;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
 
     uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     uv_args->buffer = co_new_by(1, size);
@@ -304,12 +463,58 @@ int fs_write(uv_file fd, string_t text, int64_t offset) {
 }
 
 int fs_close(uv_file fd) {
-    values_t *args;
-    uv_args_t *uv_args;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
 
     uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     args = (values_t *)co_new_by(1, sizeof(values_t));
 
     args[0].value.integer = fd;
     return fs_start(uv_args, args, UV_FS_CLOSE, 1, false).integer;
+}
+
+string fs_readfile(string_t path) {
+    uv_file fd = fs_open(path, O_RDONLY, 0);
+    string file = fs_read(fd, 0);
+    fs_close(fd);
+
+    return file;
+}
+
+int coro_write(uv_stream_t *handle, const char *text) {
+    size_t size = sizeof(text) + 1;
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
+
+    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
+    uv_args->buffer = co_new_by(1, size);
+    memcpy(uv_args->buffer, text, size);
+    uv_args->bufs = uv_buf_init(uv_args->buffer, size);
+
+    args = (values_t *)co_new_by(1, sizeof(values_t));
+    args[0].value.object = handle;
+
+    return uv_start(uv_args, args, UV_WRITE, 1, true).integer;
+}
+
+string coro_read(uv_stream_t *handle) {
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
+
+    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
+    args = (values_t *)co_new_by(1, sizeof(values_t));
+    args[0].value.object = handle;
+
+    return uv_start(uv_args, args, UV_STREAM, 1, false).char_ptr;
+}
+
+void coro_close(uv_handle_t *handle) {
+    values_t *args = NULL;
+    uv_args_t *uv_args = NULL;
+
+    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
+    args = (values_t *)co_new_by(1, sizeof(values_t));
+    args[0].value.object = handle;
+
+    uv_start(uv_args, args, UV_HANDLE, 1, false);
 }
