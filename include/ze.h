@@ -290,6 +290,23 @@ Must also closed out with `select_break()`. */
 */
 #define ze_proto(TYPE_NAME) RE_DEFINE_PROTO(TYPE_NAME)
 
+#define UNUSED(x) ((void)(x))
+#if defined(_WIN32) || defined(_WIN64)
+    /* O.S. physical ~input/output~ console `DEVICE`. */
+    #define SYS_CONSOLE "\\\\?\\CON"
+    /* O.S. physical ~null~ `DEVICE`. */
+    #define SYS_NULL "\\\\?\\NUL"
+    /* O.S. physical ~pipe~ prefix `string name` including trailing slash. */
+    #define SYS_PIPE "\\\\.\\pipe\\"
+#else
+    /* O.S. physical ~input/output~ console `DEVICE`. */
+    #define SYS_CONSOLE "/dev/tty"
+    /* O.S. physical ~null~ `DEVICE`. */
+    #define SYS_NULL "/dev/null"
+    /* O.S. physical ~pipe~ prefix `string name` including trailing slash. */
+    #define SYS_PIPE "./"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
