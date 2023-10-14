@@ -39,9 +39,12 @@ void channel_free(channel_t *c) {
         ZE_FREE(c->tmp);
         ZE_FREE(c->a_recv.a);
         ZE_FREE(c->a_send.a);
+
+        memset(c, -1, sizeof(value_types));
         ZE_FREE(c);
 
-       hash_remove(gc_channel_list(), co_itoa(id));
+        if (gc_channel_list()->size > 0)
+            hash_remove(gc_channel_list(), co_itoa(id));
     }
 }
 

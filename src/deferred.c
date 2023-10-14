@@ -4,6 +4,7 @@ int co_array_init(co_array_t *a) {
     if (UNLIKELY(!a))
         return -EINVAL;
 
+    a->type = ZE_DEF_ARR;
     a->base = NULL;
     a->elements = 0;
 
@@ -92,15 +93,16 @@ static void co_array_free(void_t data) {
     co_array_t *array = data;
 
     co_array_reset(array);
+
+    memset(array, -1, sizeof(value_types));
     ZE_FREE(array);
 }
 
 co_array_t *co_array_new(routine_t *coro) {
     co_array_t *array;
 
-    array = co_malloc_full(coro, sizeof(*array), co_array_free);
-    if (LIKELY(array))
-        co_array_init(array);
+    array = co_calloc_full(coro, 1, sizeof(*array), co_array_free);
+    co_array_init(array);
 
     return array;
 }
@@ -161,8 +163,10 @@ void co_deferred_run(routine_t *coro, size_t generation) {
         if (!ex_context)
             ex_init();
 
-        if (*coro->err_allocated->ptr != NULL)
-            coro->err_allocated->func(coro->err_allocated->ptr);
+        if (*coro->err_allocated->ptr != NULL) {
+            coro->err_allocated->func(*coro->err_allocated->ptr);
+            *coro->err_allocated->ptr = NULL;
+        }
 
         ex_context->stack = coro->err_allocated->next;
         coro->err_protected = false;
@@ -183,8 +187,11 @@ size_t co_deferred_count(const routine_t *coro) {
 
 void co_deferred_free(routine_t *coro) {
     ZE_ASSERT(coro);
-    co_deferred_run(coro, 0);
-    co_deferred_array_reset(&coro->defer);
+
+    if (is_type(&coro->defer, ZE_DEF_ARR)) {
+        co_deferred_run(coro, 0);
+        co_deferred_array_reset(&coro->defer);
+    }
 }
 
 static void co_deferred_any(routine_t *coro, func_t func, void_t data, void_t check) {
