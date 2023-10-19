@@ -32,6 +32,10 @@ ZE_FORCE_INLINE bool is_reflection(void_t self) {
         && ((reflect_kind_t *)self)->packed_size;
 }
 
+ZE_FORCE_INLINE bool is_status_invalid(routine_t *t) {
+    return (t->status > ZE_EVENT || t->status < ZE_DEAD);
+}
+
 /*
 TODO:
     ZE_NULL = -1,

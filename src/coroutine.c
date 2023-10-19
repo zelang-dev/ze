@@ -197,6 +197,9 @@ value_t co_await(callable_t fn, void_t arg) {
     wait_group_t *wg = co_wait_group();
     int cid = co_go(fn, arg);
     wait_result_t *wgr = co_wait(wg);
+    if (wgr == NULL)
+        return;
+
     return co_group_get_result(wgr, cid);
 }
 
@@ -254,10 +257,14 @@ wait_result_t *co_wait(wait_group_t *wg) {
 
                             coroutine_yield();
                         } else {
-                            if (co->results != NULL) {
+                            if (co->results != NULL && !co->loop_erred) {
                                 hash_put(wgr, co_itoa(co->cid), co->results);
                                 ZE_FREE(co->results);
                                 co->results = NULL;
+                            }
+
+                            if (co->loop_erred) {
+                                return NULL;
                             }
 
                             if (co->loop_active)
@@ -280,11 +287,14 @@ wait_result_t *co_wait(wait_group_t *wg) {
 }
 
 value_t co_group_get_result(wait_result_t *wgr, int cid) {
+    if (wgr == NULL)
+        return;
+
     return ((values_t *)hash_get(wgr, co_itoa(cid)))->value;
 }
 
 void co_result_set(routine_t *co, void_t data) {
-    if (data != NULL) {
+    if (data && data != ZE_ERROR) {
         if (co->results != NULL)
             ZE_FREE(co->results);
 
@@ -317,4 +327,8 @@ int gettimeofday(struct timeval *tp, struct timezone *tzp) {
 
 unsigned int co_id() {
     return co_active()->cid;
+}
+
+signed int co_err_code() {
+    return co_active()->loop_code;
 }

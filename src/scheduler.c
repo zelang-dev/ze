@@ -93,10 +93,15 @@ static void co_awaitable() {
         if (!co->err_recovered)
             rethrow();
     } finally {
-        if (co->loop_active)
+        if (co->loop_erred) {
+            co->halt = true;
+            co->status = ZE_ERRED;
+            co->loop_active = false;
+        } else if (co->loop_active) {
             co->status = ZE_EVENT;
-        else
+        } else {
             co->status = ZE_NORMAL;
+        }
     } end_try;
 }
 
@@ -842,6 +847,8 @@ routine_t *co_create(size_t size, callable_t func, void_t args) {
     co->synced = false;
     co->wait_active = false;
     co->event_active = false;
+    co->loop_erred = false;
+    co->loop_code = 0;
     co->wait_group = NULL;
     co->event_group = NULL;
     co->loop_active = false;
@@ -1162,8 +1169,6 @@ void coroutine_cleanup() {
  * startup
  */
 static void coroutine_scheduler(void) {
-    int i;
-    bool is_loop_close;
     routine_t *t;
 
     for (;;) {
@@ -1185,24 +1190,41 @@ static void coroutine_scheduler(void) {
         n_co_switched++;
         if (scheduler_info_log)
             ZE_INFO("Thread #%lx running coroutine id: %d (%s) status: %d\n", co_async_self(), t->cid,
-                    ((t->name != NULL && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"),
-                    t->status);
+                    ((t->name != NULL && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"), t->status);
+
         coroutine_interrupt();
-        is_loop_close = (t->status > ZE_EVENT || t->status < 0);
-        if (!is_loop_close && !t->halt)
+        if (!is_status_invalid(t) && !t->halt)
             co_switch(t);
+
         if (scheduler_info_log)
             ZE_LOG("Back at coroutine scheduling");
+
         co_running = NULL;
         if (t->halt || t->exiting) {
             if (!t->system)
                 --coroutine_count;
 
             coroutine_update(t);
-            if (!t->synced && !t->channeled) {
+            if (!t->synced && !t->channeled && !t->loop_erred) {
                 co_delete(t);
             } else if (t->channeled) {
                 gc_coroutine(t);
+            } else if (t->loop_erred && coroutine_count == 0) {
+                if (uv_server_args) {
+                    if (t->context->wait_group)
+                        hash_free(t->context->wait_group);
+
+                    if (t->context->event_group)
+                        hash_free(t->context->event_group);
+                }
+
+                if (uv_loop_alive(co_loop())) {
+                    uv_walk(co_loop(), (uv_walk_cb)uv_close_free, NULL);
+                    uv_run(co_loop(), UV_RUN_DEFAULT);
+
+                    uv_stop(co_loop());
+                    uv_run(co_loop(), UV_RUN_DEFAULT);
+                }
             }
         }
     }

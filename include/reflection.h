@@ -252,6 +252,8 @@ C_API bool is_instance(void_t);
 C_API bool is_valid(void_t);
 C_API bool is_reflection(void_t self);
 
+C_API bool is_status_invalid(routine_t *);
+
 C_API string_t reflect_kind(void_t);
 C_API void reflect_set_field(reflect_type_t *, int, void_t value);
 C_API void reflect_get_field(reflect_type_t *, int, void_t out);
