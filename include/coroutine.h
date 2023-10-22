@@ -737,6 +737,7 @@ C_API char *co_string(string_t str, size_t length);
 C_API char *co_sprintf(string_t, ...);
 C_API string *co_str_split(string_t s, string_t delim, int *count);
 C_API string co_concat_by(int num_args, ...);
+C_API string co_str_concat(string_t header, string_t *words, size_t num_words);
 C_API string_t co_itoa(int64_t number);
 C_API int co_strpos(string_t text, string pattern);
 C_API void co_strcpy(char *dest, string_t src, size_t len);
@@ -789,7 +790,10 @@ the number of other tasks that ran while the current task was waiting. */
 C_API int coroutine_yield(void);
 
 /* Returns the current coroutine's name. */
-C_API char *coroutine_get_name(void);
+C_API char *co_get_name(void);
+
+/* Returns the current coroutine's state name. */
+C_API char *co_get_state(void);
 
 /* Exit the current coroutine. If this is the last non-system coroutine,
 exit the entire program using the given exit status. */
@@ -838,6 +842,7 @@ typedef struct oa_pair_s {
 } oa_pair;
 
 typedef struct oa_hash_s oa_hash;
+typedef void (*probing_func)(struct oa_hash_s *htable, size_t *from_idx);
 struct oa_hash_s {
     value_types type;
     int capacity;

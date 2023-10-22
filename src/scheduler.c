@@ -66,9 +66,6 @@ void coroutine_system(void);
 /* Sets the current coroutine's state name.*/
 void coroutine_state(char *, ...);
 
-/* Returns the current coroutine's state name. */
-char *coroutine_get_state(void);
-
 /* called only if routine_t func returns */
 static void co_done() {
     if (!co_active()->loop_active) {
@@ -99,6 +96,8 @@ static void co_awaitable() {
             co->loop_active = false;
         } else if (co->loop_active) {
             co->status = ZE_EVENT;
+        } else if (co->event_active) {
+            co->synced = false;
         } else {
             co->status = ZE_NORMAL;
         }
@@ -1082,10 +1081,6 @@ void coroutine_state(char *fmt, ...) {
     va_end(args);
 }
 
-char *coroutine_get_state() {
-    return co_running->state;
-}
-
 void coroutine_name(char *fmt, ...) {
     va_list args;
     routine_t *t;
@@ -1094,10 +1089,6 @@ void coroutine_name(char *fmt, ...) {
     va_start(args, fmt);
     vsnprintf(t->name, sizeof t->name, fmt, args);
     va_end(args);
-}
-
-char *coroutine_get_name() {
-    return co_running->name;
 }
 
 void coroutine_system(void) {

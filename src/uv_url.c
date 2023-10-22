@@ -387,7 +387,7 @@ string url_encode(char const *s, size_t len) {
 
     from = (unsigned char *)s;
     end = (unsigned char *)s + len;
-    start = CO_CALLOC(1, 3 * len);
+    start = ZE_CALLOC(1, 3 * len);
     to = (unsigned char *)start;
 
     while (from < end) {
@@ -412,7 +412,7 @@ string url_encode(char const *s, size_t len) {
     size_t rlen = to - (unsigned char *)start;
     ret = co_new_by(1, rlen);
     memcpy(ret, start, rlen + 1);
-    CO_FREE(start);
+    ZE_FREE(start);
 
     return ret;
 }

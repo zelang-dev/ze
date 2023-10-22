@@ -170,8 +170,6 @@ static void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
             fprintf(stderr, "Error: %s\n", uv_strerror(nread));
 
         co_result_set(co, (nread == UV_EOF ? 0 : &nread));
-    } else if (nread == UV_EAGAIN) {
-        co_result_set(co, (void *)UV_EAGAIN);
     } else {
         co_result_set(co, (nread > 0 ? buf->base : NULL));
     }
@@ -423,14 +421,10 @@ static void_t uv_init(void_t uv_args) {
                 }
                 break;
             case UV_SHUTDOWN:
-                break;
             case UV_UDP_SEND:
             case UV_WORK:
-                break;
             case UV_GETADDRINFO:
-                break;
             case UV_GETNAMEINFO:
-                break;
             case UV_RANDOM:
                 break;
             case UV_UNKNOWN_REQ:
@@ -444,19 +438,12 @@ static void_t uv_init(void_t uv_args) {
         uv_handle_set_data(stream, (void_t)uv);
         switch (uv->handle_type) {
             case UV_ASYNC:
-                break;
             case UV_CHECK:
-                break;
             case UV_FS_EVENT:
-                break;
             case UV_FS_POLL:
-                break;
             case UV_IDLE:
-                break;
             case UV_NAMED_PIPE:
-                break;
             case UV_POLL:
-                break;
             case UV_PREPARE:
                 break;
             case UV_STREAM + UV_NAMED_PIPE + UV_TCP + UV_UDP:
@@ -493,24 +480,18 @@ static void_t uv_init(void_t uv_args) {
                 }
                 break;
             case UV_PROCESS:
-                break;
             case UV_STREAM:
                 result = uv_read_start((uv_stream_t *)stream, alloc_cb, read_cb);
                 break;
             case UV_TCP:
-                break;
             case UV_HANDLE:
                 result = 0;
                 uv_close(stream, close_cb);
                 break;
             case UV_TIMER:
-                break;
             case UV_TTY:
-                break;
             case UV_UDP:
-                break;
             case UV_SIGNAL:
-                break;
             case UV_FILE:
                 break;
             case UV_UNKNOWN_HANDLE:

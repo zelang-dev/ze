@@ -119,8 +119,12 @@ void println(int n_of_args, ...) {
 void co_delete(routine_t *co) {
     if (!co) {
         ZE_LOG("attempt to delete an invalid coroutine");
-    } else if (!(co->status == ZE_NORMAL || co->status == ZE_DEAD || co->status == ZE_EVENT_DEAD) && !co->exiting) {
-        ZE_LOG("attempt to delete a coroutine that is not dead or suspended");
+    } else if (!(co->status == ZE_NORMAL
+                 || co->status == ZE_DEAD
+                 || co->status == ZE_EVENT_DEAD)
+               && !co->exiting
+               ) {
+        ZE_INFO("attempt to delete a coroutine named: %s,\nthat is not dead or suspended, status is: %d\n", co->name, co->status);
     } else {
 #ifdef ZE_USE_VALGRIND
         if (co->vg_stack_id != 0) {
@@ -229,11 +233,14 @@ void co_handler(func_t fn, void_t ptr, func_t dtor) {
     string_t key = co_itoa(cid);
     routine_t *c = (routine_t *)hash_get(eg, key);
 
-    co_deferred(c, FUNC_VOID(hash_free), eg);
     co_deferred(c, dtor, ptr);
+    int r = snprintf(c->name, sizeof(c->name), "handler #%s", key);
+    if (r < 0)
+        co_panic("Invalid handler");
 
-    char event[64] = "co_handler #";
-    vsnprintf(c->name, sizeof c->name, strcat(event, key), NULL);
+    co->event_group = NULL;
+    hash_remove(eg, key);
+    hash_free(eg);
 }
 
 wait_result_t *co_wait(wait_group_t *wg) {
@@ -264,7 +271,9 @@ wait_result_t *co_wait(wait_group_t *wg) {
                             }
 
                             if (co->loop_erred) {
-                                return NULL;
+                                hash_remove(wg, pair->key);
+                                --c->wait_counter;
+                                break;
                             }
 
                             if (co->loop_active)
@@ -331,4 +340,12 @@ unsigned int co_id() {
 
 signed int co_err_code() {
     return co_active()->loop_code;
+}
+
+char *co_get_name() {
+    return co_active()->name;
+}
+
+char *co_get_state() {
+    return co_active()->state;
 }

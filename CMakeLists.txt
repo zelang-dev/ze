@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8...3.14)
 
-project(c-ze LANGUAGES C)
+project(ze LANGUAGES C)
 
 set(C_STANDARD 89)
 
@@ -14,6 +14,7 @@ message("Generated with config types: ${CMAKE_CONFIGURATION_TYPES}")
 set(BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libze-built")
+include_directories( ${CMAKE_SOURCE_DIR}/include )
 
 option(LIBUV_BUILD_SHARED "Build shared lib" OFF)
 add_subdirectory(deps/libuv)
@@ -31,7 +32,7 @@ target_link_libraries(ze PUBLIC uv_a)
 
 if(UNIX)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -D ZE_DEBUG -D ZE_USE_VALGRIND ")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fomit-frame-pointer ")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fomit-frame-pointer -Wno-return-type")
     find_package(Threads)
     target_link_libraries(ze PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 endif()
@@ -45,7 +46,7 @@ if(WIN32)
 endif()
 
 if(ZE_BUILD_TESTS)
-    set(TARGET_LIST co_cpp_future_wait co_cpp_future delay chan_3 primes co_uv_fs co_uv_stream co_uv_listen co_uv_url go_channel go_sleep go_select go_wait_group go_panic  go_slice go_slice_ref go_array go_range go_reflection go_readfile)
+    set(TARGET_LIST co_cpp_future_wait co_cpp_future delay chan_3 primes co_uv_fs co_uv_stream co_uv_listen co_uv_connect co_uv_url go_channel go_sleep go_select go_wait_group go_panic go_slice go_slice_ref go_array go_range go_reflection go_readfile)
     foreach (TARGET ${TARGET_LIST})
         add_executable(${TARGET} docs/examples/${TARGET}.c)
         target_link_libraries(${TARGET} ze)
