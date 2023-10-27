@@ -66,6 +66,9 @@ void coroutine_system(void);
 /* Sets the current coroutine's state name.*/
 void coroutine_state(char *, ...);
 
+/* Returns the current coroutine's state name. */
+char *coroutine_get_state(void);
+
 /* called only if routine_t func returns */
 static void co_done() {
     if (!co_active()->loop_active) {
@@ -119,7 +122,7 @@ static ZE_FORCE_INLINE int co_deferred_array_init(defer_t *array) {
 }
 
 uv_loop_t *co_loop() {
-    if (co_main_loop_handle != NULL)
+    if (!is_empty(co_main_loop_handle))
         return co_main_loop_handle;
 
     return uv_default_loop();
@@ -743,7 +746,7 @@ int makecontext(ucontext_t *ucp, void (*func)(), int argc, ...) {
 int swapcontext(routine_t *oucp, const routine_t *ucp) {
     int ret;
 
-    if ((oucp == NULL) || (ucp == NULL)) {
+    if (is_empty(oucp) || is_empty(ucp)) {
         /*errno = EINVAL;*/
         return -1;
     }
@@ -845,12 +848,12 @@ routine_t *co_create(size_t size, callable_t func, void_t args) {
     co->halt = false;
     co->synced = false;
     co->wait_active = false;
-    co->event_active = false;
-    co->loop_erred = false;
-    co->loop_code = 0;
     co->wait_group = NULL;
     co->event_group = NULL;
     co->loop_active = false;
+    co->event_active = false;
+    co->loop_erred = false;
+    co->loop_code = 0;
     co->args = args;
     co->results = NULL;
     co->magic_number = ZE_MAGIC_NUMBER;
@@ -914,7 +917,7 @@ int coroutine_create(callable_t fn, void_t arg, unsigned int stack) {
     id = t->cid;
     if (n_all_coroutine % 64 == 0) {
         all_coroutine = ZE_REALLOC(all_coroutine, (n_all_coroutine + 64) * sizeof(all_coroutine[ 0 ]));
-        if (all_coroutine == NULL)
+        if (is_empty(all_coroutine))
             co_panic("realloc() failed");
     }
 
@@ -923,12 +926,12 @@ int coroutine_create(callable_t fn, void_t arg, unsigned int stack) {
     all_coroutine[ n_all_coroutine ] = NULL;
     coroutine_schedule(t);
 
-    if (c->event_active && c->event_group != NULL) {
+    if (c->event_active && !is_empty(c->event_group)) {
         t->event_active = true;
         t->synced = true;
         hash_put(c->event_group, co_itoa(id), t);
         c->event_active = false;
-    } else if (c->wait_active && c->wait_group != NULL) {
+    } else if (c->wait_active && !is_empty(c->wait_group)) {
         t->synced = true;
         hash_put(c->wait_group, co_itoa(id), t);
         c->wait_counter++;
@@ -1022,7 +1025,7 @@ unsigned int co_sleep(unsigned int ms) {
 
     now = nsec();
     when = now + (size_t)ms * 1000000;
-    for (t = sleeping.head; t != NULL && t->alarm_time < when; t = t->next)
+    for (t = sleeping.head; !is_empty(t) && t->alarm_time < when; t = t->next)
         ;
 
     if (t) {
@@ -1068,7 +1071,7 @@ int coroutine_yield() {
 }
 
 bool coroutine_active() {
-    return co_run_queue.head != NULL;
+    return !is_empty(co_run_queue.head);
 }
 
 void coroutine_state(char *fmt, ...) {
@@ -1081,6 +1084,7 @@ void coroutine_state(char *fmt, ...) {
     va_end(args);
 }
 
+
 void coroutine_name(char *fmt, ...) {
     va_list args;
     routine_t *t;
@@ -1089,6 +1093,10 @@ void coroutine_name(char *fmt, ...) {
     va_start(args, fmt);
     vsnprintf(t->name, sizeof t->name, fmt, args);
     va_end(args);
+}
+
+char *coroutine_get_state() {
+    return co_active()->state;
 }
 
 void coroutine_system(void) {
@@ -1149,7 +1157,7 @@ void coroutine_cleanup() {
 
     ZE_FREE(all_coroutine);
 #ifdef UV_H
-    if (co_main_loop_handle != NULL) {
+    if (!is_empty(co_main_loop_handle)) {
         uv_loop_close(co_main_loop_handle);
         ZE_FREE(co_main_loop_handle);
     }
@@ -1181,7 +1189,7 @@ static void coroutine_scheduler(void) {
         n_co_switched++;
         if (scheduler_info_log)
             ZE_INFO("Thread #%lx running coroutine id: %d (%s) status: %d\n", co_async_self(), t->cid,
-                    ((t->name != NULL && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"), t->status);
+                    ((!is_empty(t->name) && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"), t->status);
 
         coroutine_interrupt();
         if (!is_status_invalid(t) && !t->halt)
@@ -1204,9 +1212,6 @@ static void coroutine_scheduler(void) {
                 if (uv_server_args) {
                     if (t->context->wait_group)
                         hash_free(t->context->wait_group);
-
-                    if (t->context->event_group)
-                        hash_free(t->context->event_group);
                 }
 
                 if (uv_loop_alive(co_loop())) {

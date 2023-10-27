@@ -36,6 +36,18 @@ ZE_FORCE_INLINE bool is_status_invalid(routine_t *t) {
     return (t->status > ZE_EVENT || t->status < ZE_DEAD);
 }
 
+ZE_FORCE_INLINE bool is_null(size_t self) {
+    return self == 0;
+}
+
+ZE_FORCE_INLINE bool is_empty(void_t self) {
+    return self == NULL;
+}
+
+ZE_FORCE_INLINE bool is_str_in(string_t text, string pattern) {
+    return co_strpos(text, pattern) >= 0;
+}
+
 /*
 TODO:
     ZE_NULL = -1,

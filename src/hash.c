@@ -34,6 +34,7 @@ oa_hash *oa_hash_new_lp(oa_key_ops key_ops, oa_val_ops val_ops);
 void oa_hash_free(oa_hash *htable);
 void_t oa_hash_put(oa_hash *htable, const_t key, const_t value);
 void_t oa_hash_get(oa_hash *htable, const_t key);
+bool oa_hash_has(oa_hash *htable, const_t key);
 void oa_hash_delete(oa_hash *htable, const_t key);
 void oa_hash_print(oa_hash *htable, void (*print_key)(const_t k), void (*print_val)(const_t v));
 
@@ -76,6 +77,7 @@ oa_hash *oa_hash_new(
     htable->probing_fct = probing_fct;
 
     htable->buckets = try_calloc(1, sizeof(*(htable->buckets)) * htable->capacity);
+
     for (int i = 0; i < htable->capacity; i++) {
         htable->buckets[ i ] = NULL;
     }
@@ -90,17 +92,17 @@ oa_hash *oa_hash_new_lp(oa_key_ops key_ops, oa_val_ops val_ops) {
 void oa_hash_free(oa_hash *htable) {
     if (is_type(htable, ZE_OA_HASH)) {
         for (int i = 0; i < htable->capacity; i++) {
-            if (NULL != htable->buckets[i]) {
-                if (htable->buckets[i]->key != NULL)
+            if (!is_empty(htable->buckets[i])) {
+                if (!is_empty(htable->buckets[i]->key))
                     htable->key_ops.free(htable->buckets[i]->key, htable->key_ops.arg);
-                if (htable->buckets[i]->value != NULL)
+                if (!is_empty(htable->buckets[i]->value))
                     htable->val_ops.free(htable->buckets[i]->value);
             }
 
             ZE_FREE(htable->buckets[i]);
         }
 
-        if (htable->buckets != NULL)
+        if (!is_empty(htable->buckets))
             ZE_FREE(htable->buckets);
 
         memset(htable, -1, sizeof(value_types));
@@ -123,6 +125,7 @@ inline static void oa_hash_grow(oa_hash *htable) {
     htable->capacity = (uint32_t)new_capacity_64;
     htable->size = 0;
     htable->buckets = try_calloc(1, htable->capacity * sizeof(*(htable->buckets)));
+
     for (int i = 0; i < htable->capacity; i++) {
         htable->buckets[ i ] = NULL;
     };
@@ -247,6 +250,19 @@ void_t oa_hash_get(oa_hash *htable, const_t key) {
     return (NULL == htable->buckets[ idx ]) ? NULL : htable->buckets[ idx ]->value;
 }
 
+bool oa_hash_has(oa_hash *htable, const_t key) {
+    uint32_t hash_val = htable->key_ops.hash(key, htable->key_ops.arg);
+    size_t idx = hash_val % htable->capacity;
+
+    if (NULL == htable->buckets[ idx ]) {
+        return false;
+    }
+
+    idx = oa_hash_getidx(htable, idx, hash_val, key, GET);
+
+    return (NULL == htable->buckets[idx]) ? false : true;
+}
+
 void oa_hash_delete(oa_hash *htable, const_t key) {
     uint32_t hash_val = htable->key_ops.hash(key, htable->key_ops.arg);
     size_t idx = hash_val % htable->capacity;
@@ -300,10 +316,21 @@ void oa_hash_print(oa_hash *htable, void (*print_key)(const_t k), void (*print_v
                 printf(", value=");
                 print_val(pair->value);
             }
-
             printf("\n");
         }
     }
+}
+
+void_t oa_hash_iter(oa_hash *htable, void_t variable, hash_iter_func func) {
+    oa_pair *pair;
+    for (int i = 0; i < htable->capacity; i++) {
+        pair = htable->buckets[ i ];
+        if (!is_empty(pair)) {
+            variable = func(variable, pair->key, pair->value);
+        }
+    }
+
+    return variable;
 }
 
 static size_t oa_hash_getidx(oa_hash *htable, size_t idx, uint32_t hash_val, const_t key, enum oa_ret_ops op) {
@@ -469,6 +496,18 @@ ZE_FORCE_INLINE void_t hash_replace(hash_t *htable, const_t key, const_t value) 
 
 ZE_FORCE_INLINE void_t hash_get(hash_t *htable, const_t key) {
     return oa_hash_get(htable, key);
+}
+
+ZE_FORCE_INLINE bool hash_has(hash_t *htable, const_t key) {
+    return oa_hash_has(htable, key);
+}
+
+ZE_FORCE_INLINE size_t hash_count(hash_t *htable) {
+    return htable->size;
+}
+
+ZE_FORCE_INLINE void_t hash_iter(oa_hash *htable, void_t variable, hash_iter_func func) {
+    return oa_hash_iter(htable, variable, func);
 }
 
 ZE_FORCE_INLINE void hash_delete(hash_t *htable, const_t key) {

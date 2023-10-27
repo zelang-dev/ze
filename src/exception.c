@@ -88,11 +88,11 @@ static volatile sig_atomic_t got_uncaught_exception = false;
 static void ex_print(ex_context_t *exception, string_t message) {
 #ifndef ZE_DEBUG
     fprintf(stderr, "\nFatal Error: %s in function(%s)\n\n",
-            (exception->co->panic != NULL) ? exception->co->panic : exception->ex, exception->function);
+            !is_empty(exception->co->panic) ? exception->co->panic : exception->ex, exception->function);
 #else
-    fprintf(stderr, "\n%s: %s\n", message, (exception->co->panic != NULL) ? exception->co->panic : exception->ex);
-    if (exception->file != NULL) {
-        if (exception->function != NULL) {
+    fprintf(stderr, "\n%s: %s\n", message, !is_empty((void_t)exception->co->panic) ? exception->co->panic : exception->ex);
+    if (!is_empty((void_t)exception->file)) {
+        if (!is_empty((void_t)exception->function)) {
             fprintf(stderr, "    thrown at %s (%s:%d)\n\n", exception->function, exception->file, exception->line);
         } else {
             fprintf(stderr, "    thrown at %s:%d\n\n", exception->file, exception->line);
@@ -134,6 +134,8 @@ static void unwind_stack(ex_context_t *ctx) {
                 p->func(*p->ptr);
                 temp = *p->ptr;
             }
+
+            p = p->next;
         }
     }
 
@@ -156,9 +158,9 @@ int ex_uncaught_exception(void) {
 void ex_terminate(void) {
     fflush(stdout);
     if (ex_uncaught_exception() || got_uncaught_exception)
-        ex_print(ex_context, "Coroutine-system, exception during stack unwinding leading to an undefined behavior");
+        ex_print(ex_context, "C runtime-system, exception during stack unwinding leading to an undefined behavior");
     else
-        ex_print(ex_context, "Coroutine-system, exiting with uncaught exception");
+        ex_print(ex_context, "C runtime-system, exiting with uncaught exception");
 
     coroutine_cleanup();
     exit(EXIT_FAILURE);
@@ -189,7 +191,7 @@ void ex_throw(string_t exception, string_t file, int line, string_t function, st
         ex_terminate();
 
 #ifdef _WIN32
-    if (message != NULL)
+    if (!is_empty(message))
         RaiseException(EXCEPTION_PANIC, 0, 0, 0);
 #endif
     ex_longjmp(ctx->buf, ctx->state | ex_throw_st);
@@ -261,7 +263,7 @@ void ex_signal_seh(DWORD sig, string_t ex) {
 
     if (i == max_ex_sig)
         fprintf(stderr,
-                "Coroutine-system, cannot install exception handler for signal no %d (%s), "
+                "C runtime-system, cannot install exception handler for signal no %d (%s), "
                 "too many signal exception handlers installed (max %d)\n",
                 sig, ex, max_ex_sig);
     else
@@ -293,7 +295,7 @@ void ex_handler(int sig) {
         }
 
     if (old == SIG_ERR)
-        fprintf(stderr, "Coroutine-system, cannot reinstall handler for signal no %d (%s)\n",
+        fprintf(stderr, "C runtime-system, cannot reinstall handler for signal no %d (%s)\n",
                 sig, ex);
 
     if (sig == SIGINT)
@@ -312,7 +314,7 @@ void (*ex_signal(int sig, string_t ex))(int) {
 
     if (i == max_ex_sig) {
         fprintf(stderr,
-                "Coroutine-system, cannot install exception handler for signal no %d (%s), "
+                "C runtime-system, cannot install exception handler for signal no %d (%s), "
                 "too many signal exception handlers installed (max %d)\n",
                 sig, ex, max_ex_sig);
         return SIG_ERR;
@@ -331,7 +333,7 @@ void (*ex_signal(int sig, string_t ex))(int) {
     old = sigaction(sig, &sa, &osa);
 #endif
     if (old == SIG_ERR)
-        fprintf(stderr, "Coroutine-system, cannot install handler for signal no %d (%s)\n",
+        fprintf(stderr, "C runtime-system, cannot install handler for signal no %d (%s)\n",
                 sig, ex);
     else
         ex_sig[ i ].ex = ex, ex_sig[ i ].sig = sig;

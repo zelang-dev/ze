@@ -57,9 +57,9 @@
     #define ZE_INFO(s, ...) printf(s, __VA_ARGS__ )
     #define ZE_HERE() fprintf(stderr, "Here %s:%d\n", __FILE__, __LINE__)
 #else
-    #define ZE_LOG(s) (void)s;
-    #define ZE_INFO(s, ...) (void)s;
-    #define ZE_HERE() (void)0;
+    #define ZE_LOG(s) (void)s
+    #define ZE_INFO(s, ...) (void)s
+    #define ZE_HERE() (void)0
 #endif
 
 /* Stack size when creating a coroutine. */
@@ -741,6 +741,10 @@ C_API string co_str_concat(string_t header, string_t *words, size_t num_words);
 C_API string_t co_itoa(int64_t number);
 C_API int co_strpos(string_t text, string pattern);
 C_API void co_strcpy(char *dest, string_t src, size_t len);
+C_API ht_string_t *co_parse_str(char *lines, char *sep);
+C_API string str_toupper(string s, size_t len);
+C_API string str_tolower(string s, size_t len);
+C_API string word_toupper(string str, char sep);
 
 C_API int co_array_init(co_array_t *);
 
@@ -820,6 +824,7 @@ C_API int gettimeofday(struct timeval *, struct timezone *);
     #define HASH_INIT_CAPACITY (1<<9)
 #endif
 
+typedef void_t(*hash_iter_func)(void_t instance, string_t key, const_t value);
 typedef struct oa_key_ops_s {
     uint32_t (*hash)(const_t data, void_t arg);
     void* (*cp)(const_t data, void_t arg);
@@ -857,6 +862,9 @@ C_API void hash_free(hash_t *);
 C_API void_t hash_put(hash_t *, const_t, const_t);
 C_API void_t hash_replace(hash_t *, const_t, const_t);
 C_API void_t hash_get(hash_t *, const_t);
+C_API bool hash_has(hash_t *, const_t);
+C_API size_t hash_count(hash_t *);
+C_API void_t hash_iter(hash_t *, void_t, hash_iter_func);
 C_API void hash_delete(hash_t *, const_t);
 C_API void hash_remove(hash_t *, const_t);
 C_API void hash_print(hash_t *);
