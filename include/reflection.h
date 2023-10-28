@@ -256,6 +256,7 @@ C_API bool is_status_invalid(routine_t *);
 C_API bool is_null(size_t);
 C_API bool is_empty(void_t);
 C_API bool is_str_in(string_t text, string pattern);
+C_API bool is_str_eq(string_t str, string_t str2);
 
 C_API string_t reflect_kind(void_t);
 C_API void reflect_set_field(reflect_type_t *, int, void_t value);

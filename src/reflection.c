@@ -48,6 +48,10 @@ ZE_FORCE_INLINE bool is_str_in(string_t text, string pattern) {
     return co_strpos(text, pattern) >= 0;
 }
 
+ZE_FORCE_INLINE bool is_str_eq(string_t str, string_t str2) {
+    return strcmp(str, str2) == 0;
+}
+
 /*
 TODO:
     ZE_NULL = -1,
@@ -84,7 +88,7 @@ TODO:
 string_t reflect_kind(void_t value) {
     reflect_types res = (reflect_types)type_of(value);
     if (res == ZE_STRUCT) {
-        if (strcmp(reflect_type_of((reflect_type_t *)value), "var_t") == 0) {
+        if (is_str_eq(reflect_type_of((reflect_type_t *)value), "var_t")) {
             char out[ZE_SCRAPE_SIZE];
             reflect_get_field((reflect_type_t *)value, 0, out);
             res = c_int(out);
