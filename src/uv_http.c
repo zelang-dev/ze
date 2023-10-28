@@ -1,4 +1,4 @@
-#include "../include/coroutine.h"
+#include "../include/ze.h"
 
 static string_t method_strings[] = {
 "DELETE", "GET", "HEAD", "POST", "PUT", "CONNECT", "OPTIONS", "TRACE", "COPY", "LOCK", "MKCOL", "MOVE", "PROPFIND", "PROPPATCH", "SEARCH", "UNLOCK", "REPORT", "MKACTIVITY", "CHECKOUT", "MERGE", "M-SEARCH", "NOTIFY", "SUBSCRIBE", "UNSUBSCRIBE", "PATCH", "PURGE"
@@ -200,6 +200,7 @@ http_t *http_for(http_parser_type action, string hostname, float protocol) {
     this->header = NULL;
     this->path = NULL;
     this->method = NULL;
+    this->cookies = NULL;
     this->code = 200;
     this->message = NULL;
     this->action = action;
