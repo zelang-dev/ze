@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include "../include/coroutine.h"
 
 static string_t method_strings[] = {
 "DELETE", "GET", "HEAD", "POST", "PUT", "CONNECT", "OPTIONS", "TRACE", "COPY", "LOCK", "MKCOL", "MOVE", "PROPFIND", "PROPPATCH", "SEARCH", "UNLOCK", "REPORT", "MKACTIVITY", "CHECKOUT", "MERGE", "M-SEARCH", "NOTIFY", "SUBSCRIBE", "UNSUBSCRIBE", "PATCH", "PURGE"
@@ -20,7 +20,6 @@ static string_t const day_short_names[] = {
 #define CHUNKED "chunked"
 #define KEEP_ALIVE "keep-alive"
 #define CLOSE "close"
-#define CRLF "\r\n"
 
 void_t concat_headers(void_t lines, string_t key, const_t value) {
     lines = co_concat_by(5, (string)lines, key, ": ", value, CRLF);
@@ -64,7 +63,7 @@ string_t http_status_str(uint16_t const status) {
         case 102: return "Processing"; // RFC 2518, obsoleted by RFC 4918
         case 103: return "Early Hints";
 
-        // Success 2xx
+            // Success 2xx
         case 200: return "OK";
         case 201: return "Created";
         case 202: return "Accepted";
@@ -76,7 +75,7 @@ string_t http_status_str(uint16_t const status) {
         case 208: return "Already Reported";
         case 226: return "IM Used";
 
-        // Redirection 3xx
+            // Redirection 3xx
         case 300: return "Multiple Choices";
         case 301: return "Moved Permanently";
         case 302: return "Moved Temporarily";
@@ -87,7 +86,7 @@ string_t http_status_str(uint16_t const status) {
         case 307: return "Temporary Redirect";
         case 308: return "Permanent Redirect";
 
-        // Client Error 4xx
+            // Client Error 4xx
         case 400: return "Bad Request";
         case 401: return "Unauthorized";
         case 402: return "Payment Required";
@@ -119,7 +118,7 @@ string_t http_status_str(uint16_t const status) {
         case 451: return "Unavailable For Legal Reasons";
         case 499: return "Client Closed Request";
 
-        // Server Error 5xx
+            // Server Error 5xx
         case 500: return "Internal Server Error";
         case 501: return "Not Implemented";
         case 502: return "Bad Gateway";
@@ -168,7 +167,7 @@ void parse(http_t *this, string headers) {
             } else if (is_str_in(line, "HTTP/") && this->action == HTTP_RESPONSE) {
                 params = co_str_split(line, " ", NULL);
                 this->protocol = params[0];
-                this->code = atoi(params[1]) ;
+                this->code = atoi(params[1]);
                 this->message = params[2];
             }
 
@@ -200,8 +199,8 @@ http_t *http_for(http_parser_type action, string hostname, float protocol) {
     this->header = NULL;
     this->path = NULL;
     this->method = NULL;
-    this->cookies = NULL;
-    this->code = 200;
+    this->cookies= NULL;
+    this->code = STATUS_OK;
     this->message = NULL;
     this->action = action;
     this->hostname = hostname;
@@ -210,13 +209,13 @@ http_t *http_for(http_parser_type action, string hostname, float protocol) {
     return this;
 }
 
-string http_response(http_t *this, string body, int status, string type, string extras) {
+string http_response(http_t *this, string body, http_status status, string type, string extras) {
     if (!is_null(status)) {
         this->status = status;
     }
 
     if (is_empty(body) && is_null(status)) {
-        this->status = status = 404;
+        this->status = status = STATUS_NOT_FOUND;
     }
 
     this->body = is_empty(body)
@@ -224,51 +223,55 @@ string http_response(http_t *this, string body, int status, string type, string 
                        "<h1>",
                        HTTP_SERVER,
                        ": ",
-                       status,
+                       co_itoa(status),
                        " - ",
                        http_status_str(status),
                        "</h1>")
         : body;
 
-    // set initial headers
-    put_header(this, "Date", http_std_date(0));
-    put_header(this, "Content-Type", co_concat_by(2, (is_empty(type) ? "text/html" : type) ," ; charset=utf-8"));
-    put_header(this, "Content-Length", (string)co_itoa(strlen(this->body)));
-    put_header(this, "Server", HTTP_SERVER);
+    char scrape[ZE_SCRAPE_SIZE];
+    char scrape2[ZE_SCRAPE_SIZE];
+    snprintf(scrape2, ZE_SCRAPE_SIZE, "%zu", strlen(this->body));
+
+    // Create a string out of the response data
+    string lines = co_concat_by(20,
+                        // response status
+                         "HTTP/", (is_empty(this->protocol) ? gcvt(this->version, 2, scrape) : this->protocol), " ",
+                         co_itoa(this->status), " ", http_status_str(this->status), CRLF,
+                         // set initial headers
+                         "Date: ", http_std_date(0), CRLF,
+                         "Content-Type: ", (is_empty(type) ? "text/html" : type), "; charset=utf-8", CRLF,
+                         "Content-Length: ", scrape2, CRLF,
+                         "Server: ", HTTP_SERVER, CRLF
+    );
 
     if (!is_empty(extras)) {
         int i = 0;
         string *token = co_str_split(extras, ";", &i);
         for (int x = 0; x < i; x++) {
-            string *parts = co_str_split(token[x], ":", NULL);
-                put_header(this, parts[0], parts[1]);
+            string *parts = co_str_split(token[x], "=", NULL);
+            if (!is_empty(parts))
+                put_header(this, parts[0], parts[1], true);
         }
     }
-
-    // Create a string out of the response data
-    string lines = NULL;
-
-    // response status
-    lines = co_concat_by(7,
-                         "HTTP/",
-                         (is_empty(this->protocol) ? gcvt(this->version, 2, co_active()->scrape) : this->protocol),
-                         " ",
-                         co_itoa(this->status),
-                         " ",
-                         http_status_str(this->status),
-                         CRLF
-                         );
 
     // add the headers
     lines = hash_iter(this->header, lines, concat_headers);
 
     // Build a response header string based on the current line data.
-    string headerString = co_concat_by(3, (string)lines, "\r\n\r\n", this->body);
+    string headerString = co_concat_by(3, (string)lines, CRLF, this->body);
 
     return headerString;
 }
 
-string http_request(http_t *this, string method, string path, string type, string body_data, string extras) {
+string http_request(http_t *this,
+                    http_method method,
+                    string path,
+                    string type,
+                    string connection,
+                    string body_data,
+                    string extras
+) {
     this->uri = (is_str_in(path, "://")) ? co_concat_by(2, this->hostname, path) : path;
     url_t *url_array = parse_url(this->uri);
     string hostname = !is_empty(url_array->host) ? url_array->host : this->hostname;
@@ -283,15 +286,18 @@ string http_request(http_t *this, string method, string path, string type, strin
         char path[] = "/";
     }
 
-    string headers = co_concat_by(11, str_toupper(method, strlen(method)), " ", path,
-                                  " HTTP/", gcvt(this->version, 2, co_active()->scrape), CRLF,
+    char scrape[ZE_SCRAPE_SIZE];
+    string headers = co_concat_by(11, method_strings[method], " ", path,
+                                  " HTTP/", gcvt(this->version, 2, scrape), CRLF,
                                   "Host: ", hostname, CRLF,
                                   "Accept: */*", CRLF
     );
 
     if (!is_empty(body_data)) {
-        headers = co_concat_by(5, headers, "Content-Type: ", (is_empty(type) ? "text/html" : type), "; charset=utf-8", CRLF);
-        headers = co_concat_by(4, headers, "Content-Length: ", co_itoa(strlen(body_data)), CRLF);
+        headers = co_concat_by(8, headers,
+                               "Content-Type: ", (is_empty(type) ? "text/html" : type), "; charset=utf-8", CRLF,
+                               "Content-Length: ", co_itoa(strlen(body_data)), CRLF
+        );
     }
 
     if (!is_empty(extras)) {
@@ -299,12 +305,15 @@ string http_request(http_t *this, string method, string path, string type, strin
         string *lines = co_str_split(extras, ";", &count);
         for (int x = 0; x < count; x++) {
             string *parts = co_str_split(lines[x], "=", NULL);
-            headers = co_concat_by(5, headers, word_toupper(parts[0], '-'), ": ", parts[1], CRLF);
+            if (!is_empty(parts))
+                headers = co_concat_by(5, headers, word_toupper(parts[0], '-'), ": ", parts[1], CRLF);
         }
     }
 
-    headers = co_concat_by(4, headers, "User-Agent: ", HTTP_AGENT, CRLF);
-    headers = co_concat_by(4, headers, "Connection: close", CRLF, CRLF);
+    headers = co_concat_by(8, headers,
+                           "User-Agent: ", HTTP_AGENT, CRLF,
+                           "Connection: ", (is_empty(connection) ? "close" : connection), CRLF, CRLF
+    );
 
     if (!is_empty(body_data))
         headers = co_concat_by(2, headers, body_data);
@@ -325,10 +334,10 @@ string get_variable(http_t *this, string key, string var, string defaults) {
         int count = 1;
         string line = get_header(this, key, defaults);
         string *sections = (is_str_in(line, "; ")) ? co_str_split(line, "; ", &count) : (string *)line;
-        for(int x = 0; x < count; x++) {
+        for (int x = 0; x < count; x++) {
             string parts = sections[x];
             string *variable = co_str_split(parts, "=", NULL);
-            if (is_str_eq(variable[0], var)){
+            if (is_str_eq(variable[0], var)) {
                 return !is_empty(variable[1]) ? variable[1] : defaults;
             }
         }
@@ -345,11 +354,15 @@ string get_parameter(http_t *this, string key, string defaults) {
     return defaults;
 }
 
-void put_header(http_t *this, string key, string value) {
+void put_header(http_t *this, string key, string value, bool force_cap) {
+    string temp = key;
     if (is_empty(this->header))
         this->header = ht_string_init();
 
-    hash_put(this->header, word_toupper(key, '-'), value);
+    if (force_cap)
+        temp = word_toupper(key, '-');
+
+    hash_put(this->header, temp, value);
 }
 
 bool has_header(http_t *this, string key) {

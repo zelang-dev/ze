@@ -1,4 +1,4 @@
-#include "../include/ze.h"
+#include "../include/coroutine.h"
 
 string_t co_itoa(int64_t number) {
 #ifdef _WIN32
@@ -137,6 +137,12 @@ string co_sprintf(string_t fmt, ...) {
 }
 
 string *co_str_split(string_t s, string_t delim, int *count) {
+    if (is_str_eq(s, ""))
+        return NULL;
+
+    if (is_empty((void_t)delim))
+        delim = " ";
+
     void *data;
     string _s = (string)s;
     string_t *ptrs;
