@@ -46,7 +46,7 @@ if(WIN32)
 endif()
 
 if(ZE_BUILD_TESTS)
-    set(TARGET_LIST co_cpp_future_wait co_cpp_future delay chan_3 primes co_uv_fs co_uv_stream co_uv_listen co_uv_connect co_uv_url co_uv_http go_channel go_sleep go_select go_wait_group go_panic go_slice go_slice_ref go_array go_range go_reflection go_readfile)
+    set(TARGET_LIST co_cpp_future_wait co_cpp_future delay chan_3 primes co_uv_fs co_uv_stream co_uv_listen co_uv_connect co_uv_url co_http_request co_http_response co_parse_http go_channel go_sleep go_select go_wait_group go_panic go_slice go_slice_ref go_array go_range go_reflection go_readfile)
     foreach (TARGET ${TARGET_LIST})
         add_executable(${TARGET} docs/examples/${TARGET}.c)
         target_link_libraries(${TARGET} ze)

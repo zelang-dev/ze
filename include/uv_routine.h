@@ -6,7 +6,7 @@
 
 /* Public API qualifier. */
 #ifndef C_API
-    #define C_API extern
+#define C_API extern
 #endif
 
 #define stream(handle) ((uv_stream_t *)handle)
@@ -356,6 +356,7 @@ typedef struct http_s {
     /* The current headers */
     void *headers;
 
+
     /* The protocol */
     char *protocol;
 
@@ -411,7 +412,7 @@ C_API const char *http_status_str(uint16_t const status);
 C_API char *http_std_date(time_t t);
 
 /* Parse/prepare server headers, and store. */
-C_API void parse(http_t *, char *headers);
+C_API void parse_http(http_t *, char *headers);
 
 /**
  * Returns `http_t` instance, for simple generic handling/constructing **http** request/response
@@ -450,26 +451,21 @@ C_API char *http_request(http_t *,
 
 /**
  * Return a request header `content`.
- *
- * - `defaults` value to return if not found
  */
-C_API char *get_header(http_t *, char *key, char *defaults);
+C_API char *get_header(http_t *, char *key);
 
 /**
  * Return a request header content `variable` value.
  *
  * - `key` header to check for
  * - `var` variable to find
- * - `defaults` value to return if not found
  */
-C_API char *get_variable(http_t *, char *key, char *var, char *defaults);
+C_API char *get_variable(http_t *, char *key, char *var);
 
 /**
  * Return a request parameter `value`.
- *
- * - `defaults` value to return if not found
  */
-C_API char *get_parameter(http_t *, char *key, char *defaults);
+C_API char *get_parameter(http_t *, char *key);
 
 /**
  * Add or overwrite an response header parameter.
