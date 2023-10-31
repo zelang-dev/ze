@@ -24,7 +24,7 @@ file(GLOB lib_files
 )
 
 add_definitions(-DZE_STACK_SIZE=10240)
-add_definitions(-DZE_MAIN_STACK=11264)
+add_definitions(-DZE_MAIN_STACK=16384)
 add_definitions(-DZE_SCRAPE_SIZE=64)
 add_definitions(-DHASH_INIT_CAPACITY=512)
 add_library(ze STATIC ${lib_files})
