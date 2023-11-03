@@ -76,7 +76,7 @@ void co_delete(routine_t *co) {
         ZE_LOG("attempt to delete an invalid coroutine");
     } else if (!(co->status == ZE_NORMAL
                  || co->status == ZE_DEAD
-                 // || co->status == ZE_ERRED
+                 || co->status == ZE_ERRED
                  || co->status == ZE_EVENT_DEAD)
                && !co->exiting
                ) {
@@ -99,7 +99,6 @@ void co_delete(routine_t *co) {
             if (co->results && !co->event_active)
                 ZE_FREE(co->results);
 
-            //if (co->status != ZE_ERRED)
             ZE_FREE(co);
         }
     }

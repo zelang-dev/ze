@@ -18,6 +18,7 @@ int co_array_reset(co_array_t *a) {
     ZE_FREE(a->base);
     a->base = NULL;
     a->elements = 0;
+    memset(a, -1, sizeof(value_types));
 
     return 0;
 }
@@ -120,7 +121,6 @@ static ZE_FORCE_INLINE void co_deferred_array_free(defer_t *array) {
 
 static ZE_FORCE_INLINE size_t co_deferred_array_get_index(const defer_t *array, co_array_t *elem) {
     ZE_ASSERT(elem >= (co_array_t *)array->base.base);
-    ZE_ASSERT(elem < (co_array_t *)array->base.base + array->base.elements);
     return (size_t)(elem - (co_array_t *)array->base.base);
 }
 

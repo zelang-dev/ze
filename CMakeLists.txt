@@ -30,6 +30,9 @@ add_definitions(-DHASH_INIT_CAPACITY=512)
 add_library(ze STATIC ${lib_files})
 target_link_libraries(ze PUBLIC uv_a)
 
+add_subdirectory(deps/yyjson)
+target_link_libraries(ze PUBLIC yyjson)
+
 if(UNIX)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -D ZE_DEBUG -D ZE_USE_VALGRIND ")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fomit-frame-pointer -Wno-return-type")
