@@ -11,6 +11,7 @@ cmake_dependent_option(ZE_BUILD_TESTS
 
 message("Generated with config types: ${CMAKE_CONFIGURATION_TYPES}")
 
+set(CMAKE_CONFIGURATION_TYPES=Debug;Release)
 set(BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libze-built")
@@ -33,6 +34,12 @@ target_link_libraries(ze PUBLIC uv_a)
 add_subdirectory(deps/yyjson)
 target_link_libraries(ze PUBLIC yyjson)
 
+add_definitions(-DLIBRESSL_APPS=OFF)
+add_definitions(-DLIBRESSL_TESTS=OFF)
+add_subdirectory(deps/libressl)
+target_link_libraries(ze PUBLIC ssl)
+target_link_libraries(ze PUBLIC crypto)
+
 if(UNIX)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -D ZE_DEBUG -D ZE_USE_VALGRIND ")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fomit-frame-pointer -Wno-return-type")
@@ -49,11 +56,7 @@ if(WIN32)
 endif()
 
 if(ZE_BUILD_TESTS)
-    set(TARGET_LIST co_cpp_future_wait co_cpp_future delay chan_3 primes co_uv_fs co_uv_stream co_uv_listen co_uv_connect co_uv_url co_http_request co_http_response co_parse_http go_channel go_sleep go_select go_wait_group go_panic go_slice go_slice_ref go_array go_range go_reflection go_readfile)
-    foreach (TARGET ${TARGET_LIST})
-        add_executable(${TARGET} docs/examples/${TARGET}.c)
-        target_link_libraries(${TARGET} ze)
-    endforeach()
+    add_subdirectory(docs/examples)
 endif()
 
 if(ZE_BUILD_TESTS)

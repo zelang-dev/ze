@@ -42,4 +42,6 @@ int co_main(int argc, char *argv[]) {
     ZE_ASSERT(is_str_eq("POST", parser->method));
     ZE_ASSERT(is_str_eq("/path", parser->path));
     ZE_ASSERT(is_str_eq("HTTP/1.1", parser->protocol));
+
+    return 0;
 }
