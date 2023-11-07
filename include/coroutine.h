@@ -600,6 +600,7 @@ typedef struct uv_args_s
     uv_buf_t bufs;
     uv_stat_t stat[1];
     uv_statfs_t statfs[1];
+    evt_ctx_t ctx;
 
     struct sockaddr_in6 in6[1];
     struct sockaddr_in in4[1];
@@ -643,7 +644,7 @@ typedef struct channel_s
     values_t *tmp;
     msg_queue_t a_send;
     msg_queue_t a_recv;
-    char *name;
+    string name;
     bool select_ready;
 } channel_t;
 
@@ -737,20 +738,21 @@ C_API void_t co_malloc(routine_t *, size_t);
 C_API void_t co_malloc_full(routine_t *, size_t, func_t);
 C_API void_t co_memdup(routine_t *, const_t, size_t);
 
-C_API char *co_strdup(string_t);
-C_API char *co_strndup(string_t, size_t);
-C_API char *co_string(string_t str, size_t length);
-C_API char *co_sprintf(string_t, ...);
+C_API string co_strdup(string_t);
+C_API string co_strndup(string_t, size_t);
+C_API string co_string(string_t str, size_t length);
+C_API string co_sprintf(string_t, ...);
 C_API string *co_str_split(string_t s, string_t delim, int *count);
 C_API string co_concat_by(int num_args, ...);
 C_API string_t co_itoa(int64_t number);
 C_API int co_strpos(string_t text, string pattern);
-C_API void co_strcpy(char *dest, string_t src, size_t len);
-C_API ht_string_t *co_parse_str(char *lines, char *sep);
+C_API void co_strcpy(string dest, string_t src, size_t len);
+C_API ht_string_t *co_parse_str(string lines, string sep);
 C_API string *str_split(string_t s, string_t delim, int *count);
 C_API string str_concat_by(int num_args, ...);
 C_API string str_toupper(string s, size_t len);
 C_API string str_tolower(string s, size_t len);
+C_API void str_merge(string buffer, string_t text, string_t ext);
 C_API string word_toupper(string str, char sep);
 C_API string ltrim(string s);
 C_API string rtrim(string s);
@@ -804,7 +806,7 @@ C_API void co_pause(void);
 C_API string co_get_name(void);
 
 /* Returns the current coroutine's state name. */
-C_API char *co_get_state(void);
+C_API string co_get_state(void);
 
 /* Returns library version and OS system info from `uv_os_uname()`. */
 C_API string co_system_uname(void);
@@ -831,6 +833,7 @@ C_API void channel_free(channel_t *);
 C_API int vasprintf(char **, string_t, va_list);
 C_API int asprintf(char **, string_t, ...);
 C_API struct tm *gmtime_r(const time_t *timer, struct tm *buf);
+#define gcvt _gcvt
 #endif
 
 #define HASH_LOAD_FACTOR (0.75)
@@ -996,7 +999,7 @@ C_API map_t *map_string_init(void);
 C_API map_t *map(map_value_dtor, int, ...);
 C_API map_t *map_long(int, ...);
 C_API map_t *map_str(int, ...);
-C_API map_t *map_for(map_value_dtor dtor, char *desc, ...);
+C_API map_t *map_for(map_value_dtor dtor, string desc, ...);
 C_API void map_free(map_t *);
 C_API int map_push(map_t *, void_t);
 C_API map_value_t *map_pop(map_t *);
