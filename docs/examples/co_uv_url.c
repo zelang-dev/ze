@@ -20,15 +20,18 @@ int co_main(int argc, char *argv[]) {
     printf("[filename] => %s\n\n", fileinfo->filename);
 
     if (url->query) {
-       int i = 0;
-       char **token = co_str_split(url->query, "&", &i);
+        int i = 0;
+        char **token = co_str_split(url->query, "&", &i);
 
-       for (int x = 0; x < i; x++) {
-           char **parts = co_str_split(token[x], "=", NULL);
-           printf("%s = %s\n", parts[0], parts[1]);
-       }
-   }
+        for (int x = 0; x < i; x++) {
+            char **parts = co_str_split(token[x], "=", NULL);
+            printf("%s = %s\n", parts[0], parts[1]);
+        }
+    }
 
-   printf("%s\n", co_concat_by(3, "testing ", "this ", "thing"));
-   return 0;
+    printf("New String: %s\n", str_replace(fileinfo->dirname,
+                                           "directory",
+                                           co_concat_by(3, "testing ", "this ", "thing")));
+
+    return 0;
 }
