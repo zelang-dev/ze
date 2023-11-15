@@ -21,6 +21,10 @@
     #include <sys/resource.h> /* setrlimit() */
 #endif
 
+#ifndef CERTIFICATE
+    #define CERTIFICATE "localhost"
+#endif
+
 #include "uv_routine.h"
 #if defined(_WIN32) || defined(_WIN64)
     #include "compat/pthread.h"
@@ -65,7 +69,7 @@
 
 /* Stack size when creating a coroutine. */
 #ifndef ZE_STACK_SIZE
-    #define ZE_STACK_SIZE (10 * 1024)
+    #define ZE_STACK_SIZE (32 * 1024)
 #endif
 
 #ifndef ZE_MAIN_STACK
@@ -525,6 +529,8 @@ struct routine_s {
     bool loop_active;
     bool event_active;
     bool loop_erred;
+    bool is_address;
+    bool is_plain;
     signed int loop_code;
     void_t user_data;
 #if defined(ZE_USE_VALGRIND)
@@ -748,17 +754,27 @@ C_API string_t co_itoa(int64_t number);
 C_API int co_strpos(string_t text, string pattern);
 C_API void co_strcpy(string dest, string_t src, size_t len);
 C_API ht_string_t *co_parse_str(string lines, string sep);
+
+/*
+Returns information about a certain file string path
+
+Modifed C code from PHP userland function
+see https://www.php.net/manual/en/function.pathinfo.php */
+C_API fileinfo_t *pathinfo(string filepath);
+C_API const_t str_memrchr(const_t s, int c, size_t n);
 C_API string *str_split(string_t s, string_t delim, int *count);
 C_API string str_concat_by(int num_args, ...);
+
 C_API string str_toupper(string s, size_t len);
 C_API string str_tolower(string s, size_t len);
-C_API void str_merge(string buffer, string_t text, string_t ext);
 C_API string word_toupper(string str, char sep);
+
 C_API string ltrim(string s);
 C_API string rtrim(string s);
 C_API string trim(string s);
-C_API u_string co_base64_encode(u_string_t src);
-C_API u_string co_base64_decode(u_string_t src);
+
+C_API u_string base64_encode(u_string_t src);
+C_API u_string base64_decode(u_string_t src);
 
 C_API int co_array_init(co_array_t *);
 

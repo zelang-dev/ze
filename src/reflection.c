@@ -56,6 +56,10 @@ ZE_FORCE_INLINE bool is_str_empty(string_t str) {
     return is_str_eq(str, "");
 }
 
+ZE_FORCE_INLINE bool is_tls(uv_handle_t *self) {
+    return ((var_t *)self)->type == UV_TLS;
+}
+
 /*
 TODO:
     ZE_NULL = -1,
