@@ -34,6 +34,7 @@
 #else
     #include <pthread.h>
     #include <unistd.h>
+    #include <libgen.h>
 #endif
 
 #include <time.h>

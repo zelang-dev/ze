@@ -235,14 +235,3 @@ endif (MSVC)
 # Install                       #
 #################################
 install(FILES _ptw32.h pthread.h sched.h semaphore.h TYPE INCLUDE)
-
-#################################
-# Test                          #
-#################################
-option(ENABLE_TESTS "Enable Test code build" FALSE)
-
-#TODO determine if cross compile...
-if(ENABLE_TESTS AND (NOT CMAKE_CROSSCOMPILING AND BUILD_TESTING))
-  include (CTest)
-  add_subdirectory(tests)
-endif()
