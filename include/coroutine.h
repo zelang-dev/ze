@@ -321,6 +321,8 @@ typedef enum
     ZE_FUTURE,
     ZE_FUTURE_ARG,
     ZE_EVENT_ARG,
+    ZE_ARGS,
+    ZE_PROCESS,
     ZE_SCHED,
     ZE_CHANNEL,
     ZE_STRUCT,
@@ -343,6 +345,7 @@ typedef struct {
 
 typedef void_t(*callable_t)(void_t);
 typedef void (*func_t)(void_t);
+typedef void (*any_func_t)(void_t, ...);
 typedef struct {
     value_types type;
     void_t value;
@@ -513,6 +516,7 @@ struct routine_s {
     /* unique coroutine id */
     int cid;
     size_t alarm_time;
+    size_t cycles;
     routine_t *next;
     routine_t *prev;
     bool channeled;
@@ -529,6 +533,7 @@ struct routine_s {
     routine_t *context;
     bool loop_active;
     bool event_active;
+    bool process_active;
     bool loop_erred;
     bool is_address;
     bool is_plain;
@@ -587,6 +592,11 @@ typedef struct values_s
     value_types type;
 } values_t;
 
+typedef struct {
+    value_types type;
+    value_t value;
+} generics_t;
+
 typedef enum {
     ZE_OK = ZE_NONE,
     ZE_ERR = ZE_NULL,
@@ -626,6 +636,18 @@ typedef struct uv_args_s
     /* total number of args in set */
     size_t n_args;
 } uv_args_t;
+
+typedef struct args_s {
+    value_types type;
+    /* allocated array of arguments */
+    generics_t *args;
+    routine_t *context;
+    string buffer;
+
+    /* total number of args in set */
+    size_t n_args;
+    bool defer_set;
+} args_t;
 
 /*
  * channel communication
@@ -673,7 +695,48 @@ struct channel_co_s
     channel_co_t *x_msg;
 };
 
-uv_loop_t *co_loop(void);
+C_API uv_loop_t *co_loop(void);
+
+/**
+* `Release/free` allocated memory, must be called if not using `get_args()` function.
+*
+* @param params arbitrary arguments
+*/
+C_API void args_free(args_t *params);
+
+/**
+* Creates an container for arbitrary arguments passing to an `coroutine` or `thread`.
+* Use `get_args()` or `args_in()` for retrieval.
+*
+* @param desc format, similar to `printf()`:
+* - `i` integer
+* - `c` character
+* - `s` string
+* - `x` function
+* - `f` double/float
+* - `p` void pointer for any arbitrary object
+* @param arguments indexed by `desc` format order
+*/
+C_API args_t *args_for(string_t desc, ...);
+
+/**
+* Returns generic union `value_t` of argument, will auto `release/free`
+* allocated memory when `coroutine` return/exit by `co_defer()`.
+*
+* Must be called at least once to release `allocated` memory.
+*
+* @param params arbitrary arguments
+* @param item index number
+*/
+C_API value_t get_args(void_t *params, int item);
+
+/**
+* Returns generic union `value_t` of argument.
+*
+* @param params arguments instance
+* @param index item number
+*/
+C_API value_t args_in(args_t *params, int index);
 
 /* Return handle to current coroutine. */
 C_API routine_t *co_active(void);
@@ -800,13 +863,12 @@ C_API int co_go(callable_t, void_t);
 /* Creates an coroutine of given function with argument, and immediately execute. */
 C_API void co_execute(func_t, void_t);
 
-C_API uv_loop_t *co_loop(void);
-
 C_API value_t co_event(callable_t, void_t arg);
 
 C_API value_t co_await(callable_t fn, void_t arg);
 
 C_API void co_handler(func_t fn, void_t ptr, func_t dtor);
+C_API void co_process(func_t fn, void_t args);
 
 /* Explicitly give up the CPU for at least ms milliseconds.
 Other tasks continue to run during this time. */
@@ -1094,29 +1156,32 @@ C_API map_value_t *map_macro_type(void_t);
     __try                                     \
     {                                         \
         if (ex_err.state == ex_try_st)        \
-        {                                     \
             {
 
 #define ex_catch_any                    \
     }                                \
     }                                \
-    }                                \
     __except(catch_filter_seh(GetExceptionCode(), GetExceptionInformation())) {\
     if (ex_err.state == ex_throw_st) \
-    {                                \
         {                            \
             EX_MAKE();               \
             ex_err.state = ex_catch_st;
 
-#define ex_end_try                            \
+#define ex_finally                          \
     }                                      \
+    }                                    \
+        {                                \
+            EX_MAKE();                   \
+            /* global context updated */ \
+            ex_context = ex_err.next;
+
+#define ex_end_try                            \
     }                                      \
     if (ex_context == &ex_err)             \
         /* global context updated */       \
         ex_context = ex_err.next;          \
     if ((ex_err.state & ex_throw_st) != 0) \
         rethrow();                         \
-    }                                      \
     }
 
 #else
@@ -1147,6 +1212,15 @@ C_API map_value_t *map_macro_type(void_t);
             EX_MAKE();               \
             ex_err.state = ex_catch_st;
 
+#define ex_finally                          \
+    }                                    \
+    }                                    \
+    {                                    \
+        {                                \
+            EX_MAKE();                   \
+            /* global context updated */ \
+            ex_context = ex_err.next;
+
 #define ex_end_try                            \
     }                                      \
     }                                      \
@@ -1157,15 +1231,6 @@ C_API map_value_t *map_macro_type(void_t);
         rethrow();                         \
     }
 #endif
-
-#define ex_finally                          \
-    }                                    \
-    }                                    \
-    {                                    \
-        {                                \
-            EX_MAKE();                   \
-            /* global context updated */ \
-            ex_context = ex_err.next;
 
 #define ex_catch(E)                        \
     }                                   \

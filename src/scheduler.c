@@ -70,6 +70,29 @@ void coroutine_state(char *, ...);
 /* Returns the current coroutine's state name. */
 char *coroutine_get_state(void);
 
+#if defined(_MSC_VER) && defined(NO_GETTIMEOFDAY)
+int gettimeofday(struct timeval *tp, struct timezone *tzp) {
+    /*
+     * Note: some broken versions only have 8 trailing zero's, the correct
+     * epoch has 9 trailing zero's
+     */
+    static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
+
+    SYSTEMTIME  system_time;
+    FILETIME    file_time;
+    uint64_t    time;
+
+    GetSystemTime(&system_time);
+    SystemTimeToFileTime(&system_time, &file_time);
+    time = ((uint64_t)file_time.dwLowDateTime);
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec = (long)((time - EPOCH) / 10000000L);
+    tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
+    return 0;
+}
+#endif
+
 C_API string co_system_uname(void) {
     if (is_empty(system_powered_by)) {
         uv_utsname_t buffer[1];
@@ -866,11 +889,14 @@ routine_t *co_create(size_t size, callable_t func, void_t args) {
     co->event_group = NULL;
     co->loop_active = false;
     co->event_active = false;
+    co->process_active = false;
     co->loop_erred = false;
     co->is_plain = false;
     co->is_address = false;
     co->loop_code = 0;
     co->args = args;
+    co->user_data = NULL;
+    co->cycles = 0;
     co->results = NULL;
     co->magic_number = ZE_MAGIC_NUMBER;
     co->stack_base = (unsigned char *)(co + 1);
@@ -1154,6 +1180,7 @@ void coroutine_update(routine_t *t) {
     all_coroutine[i]->all_coroutine_slot = i;
 }
 
+
 void coroutine_cleanup() {
     routine_t *t;
     gc_channel_free();
@@ -1171,21 +1198,25 @@ void coroutine_cleanup() {
         }
     }
 
-    ZE_FREE(all_coroutine);
+    if (!is_empty(all_coroutine)) {
+        ZE_FREE(all_coroutine);
+        all_coroutine = NULL;
+    }
 #ifdef UV_H
     if (!is_empty(co_main_loop_handle)) {
-        uv_loop_close(co_main_loop_handle);
+        if (uv_loop_alive(co_main_loop_handle))
+            uv_loop_close(co_main_loop_handle);
         ZE_FREE(co_main_loop_handle);
+        co_main_loop_handle = NULL;
     }
 
-    if (!is_empty(system_powered_by))
+    if (!is_empty(system_powered_by)) {
         ZE_FREE(system_powered_by);
+        system_powered_by = NULL;
+    }
 #endif
 }
 
-/*
- * startup
- */
 static void coroutine_scheduler(void) {
     routine_t *t;
 
@@ -1207,12 +1238,14 @@ static void coroutine_scheduler(void) {
         co_running = t;
         n_co_switched++;
         if (scheduler_info_log)
-            ZE_INFO("Thread #%lx running coroutine id: %d (%s) status: %d\n", co_async_self(), t->cid,
-                    ((!is_empty(t->name) && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"), t->status);
+            ZE_INFO("Thread #%lx running coroutine id: %d (%s) status: %d cycles: %zu\n", co_async_self(), t->cid,
+                    ((!is_empty(t->name) && t->cid > 0) ? t->name : !t->channeled ? "" : "channel"), t->status, t->cycles);
 
         coroutine_interrupt();
-        if (!is_status_invalid(t) && !t->halt)
+        if (!is_status_invalid(t) && !t->halt) {
+            t->cycles++;
             co_switch(t);
+        }
 
         if (scheduler_info_log)
             ZE_LOG("Back at coroutine scheduling");

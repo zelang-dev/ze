@@ -1,5 +1,77 @@
 #include "../include/ze.h"
 
+void args_free(args_t *params) {
+    if (is_type(params, ZE_ARGS)) {
+        ZE_FREE(params->args);
+        memset(params, 0, sizeof(value_types));
+        ZE_FREE(params);
+    }
+}
+
+value_t get_args(void_t *params, int item) {
+    args_t *co_args = (args_t *)params;
+    if (!co_args->defer_set) {
+        defer(args_free, co_args);
+        co_args->defer_set = true;
+    }
+
+    return (item > -1 && item < co_args->n_args)
+        ? co_args->args[item].value
+        : ((generics_t *)0)->value;
+}
+
+ZE_FORCE_INLINE value_t args_in(args_t *params, int index) {
+    return (index > -1 && index < params->n_args)
+        ? params->args[index].value
+        : ((generics_t *)0)->value;
+}
+
+args_t *args_for(string_t desc, ...) {
+    int count = (int)strlen(desc);
+    args_t *params = (args_t *)try_calloc(1, sizeof(args_t));
+    generics_t *args = (generics_t *)try_calloc(count, sizeof(generics_t));
+    va_list argp;
+
+    va_start(argp, desc);
+    for (int i = 0; i < count; i++) {
+        switch (*desc++) {
+            case 'i':
+                // integer argument
+                args[i].value.max_size = va_arg(argp, size_t);
+                break;
+            case 'c':
+                // character argument
+                args[i].value.schar = (char)va_arg(argp, int);
+                break;
+            case 's':
+                // string argument
+                args[i].value.char_ptr = va_arg(argp, char *);
+                break;
+            case 'x':
+                // executable argument
+                args[i].value.func = (callable_t)va_arg(argp, any_func_t);
+                break;
+            case 'f':
+                // float argument
+                args[i].value.precision = va_arg(argp, double);
+                break;
+            case 'p':
+                // void pointer (any arbitrary pointer) argument
+                args[i].value.object = va_arg(argp, void_t);
+                break;
+            default:
+                break;
+    }
+}
+    va_end(argp);
+
+    params->type = ZE_ARGS;
+    params->args = args;
+    params->defer_set = false;
+    params->n_args = count;
+    return params;
+}
+
 void delete(void_t ptr) {
     match(ptr) {
         and (ZE_MAP_STRUCT)
@@ -167,6 +239,27 @@ value_t co_event(callable_t fn, void_t arg) {
     routine_t *co = co_active();
     co->loop_active = true;
     return co_await(fn, arg);
+}
+
+void co_process(func_t fn, void_t args) {
+    routine_t *co = co_active();
+    wait_group_t *eg = ht_group_init();
+
+    co->event_group = eg;
+    co->event_active = true;
+
+    int cid = co_go((callable_t)fn, args);
+    string_t key = co_itoa(cid);
+    routine_t *c = (routine_t *)hash_get(eg, key);
+    c->process_active = true;
+
+    int r = snprintf(c->name, sizeof(c->name), "process #%s", key);
+    if (r == 0)
+        ZE_LOG("Invalid process");
+
+    co->event_group = NULL;
+    hash_remove(eg, key);
+    hash_free(eg);
 }
 
 wait_group_t *co_wait_group(void) {

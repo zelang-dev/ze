@@ -5,6 +5,26 @@ static void_t uv_init(void_t);
 
 thread_local uv_args_t *uv_server_args = NULL;
 
+static void uv_arguments_free(uv_args_t *uv_args) {
+    ZE_FREE(uv_args->args);
+    ZE_FREE(uv_args);
+}
+
+static uv_args_t *uv_arguments(int count, bool auto_free) {
+    uv_args_t *uv_args = NULL;
+    values_t *params = NULL;
+    if (auto_free) {
+        uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
+        params = (values_t *)co_new_by(count, sizeof(values_t));
+    } else {
+        uv_args = (uv_args_t *)try_calloc(1, sizeof(uv_args_t));
+        params = (values_t *)try_calloc(count, sizeof(values_t));
+    }
+
+    uv_args->args = params;
+    return uv_args;
+}
+
 void_t uv_error_post(routine_t *co, int r) {
     co->loop_erred = true;
     co->loop_code = r;
@@ -58,8 +78,7 @@ void coroutine_event_cleanup(void_t t) {
     }
 }
 
-static value_t fs_start(uv_args_t *uv_args, values_t *args, uv_fs_type fs_type, size_t n_args, bool is_path) {
-    uv_args->args = args;
+static value_t fs_start(uv_args_t *uv_args, uv_fs_type fs_type, size_t n_args, bool is_path) {
     uv_args->type = ZE_EVENT_ARG;
     uv_args->fs_type = fs_type;
     uv_args->n_args = n_args;
@@ -68,8 +87,7 @@ static value_t fs_start(uv_args_t *uv_args, values_t *args, uv_fs_type fs_type, 
     return co_event(fs_init, uv_args);
 }
 
-static value_t uv_start(uv_args_t *uv_args, values_t *args, int type, size_t n_args, bool is_request) {
-    uv_args->args = args;
+static value_t uv_start(uv_args_t *uv_args, int type, size_t n_args, bool is_request) {
     uv_args->type = ZE_EVENT_ARG;
     uv_args->is_request = is_request;
     if (is_request)
@@ -682,94 +700,67 @@ static void_t uv_init(void_t uv_args) {
 }
 
 uv_file fs_open(string_t path, int flags, int mode) {
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(3, true);
+    uv_args->args[0].value.char_ptr = (string)path;
+    uv_args->args[1].value.integer = flags;
+    uv_args->args[2].value.integer = mode;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    args = (values_t *)co_new_by(3, sizeof(values_t));
-
-    args[0].value.char_ptr = (string)path;
-    args[1].value.integer = flags;
-    args[2].value.integer = mode;
-
-    return (uv_file)fs_start(uv_args, args, UV_FS_OPEN, 3, true).integer;
+    return (uv_file)fs_start(uv_args, UV_FS_OPEN, 3, true).integer;
 }
 
 int fs_unlink(string_t path) {
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(1, true);
+    uv_args->args[0].value.char_ptr = (string)path;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    args = (values_t *)co_new_by(1, sizeof(values_t));
-    args[0].value.char_ptr = (string)path;
-
-    return (uv_file)fs_start(uv_args, args, UV_FS_UNLINK, 1, true).integer;
+    return (uv_file)fs_start(uv_args, UV_FS_UNLINK, 1, true).integer;
 }
 
 uv_stat_t *fs_fstat(uv_file fd) {
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(1, true);
+    uv_args->args[0].value.integer = fd;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    args = (values_t *)co_new_by(1, sizeof(values_t));
-    args[0].value.integer = fd;
-
-    return (uv_stat_t *)fs_start(uv_args, args, UV_FS_FSTAT, 1, false).object;
+    return (uv_stat_t *)fs_start(uv_args, UV_FS_FSTAT, 1, false).object;
 }
 
 int fs_fsync(uv_file fd) {
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(1, true);
+    uv_args->args[0].value.integer = fd;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    args = (values_t *)co_new_by(1, sizeof(values_t));
-    args[0].value.integer = fd;
-
-    return fs_start(uv_args, args, UV_FS_FSYNC, 1, false).integer;
+    return fs_start(uv_args, UV_FS_FSYNC, 1, false).integer;
 }
 
 string fs_read(uv_file fd, int64_t offset) {
     uv_stat_t *stat = fs_fstat(fd);
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(2, true);
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    uv_args->buffer = co_new_by(1, stat->st_size + 1);
+    uv_args->buffer = co_new_by(1, (size_t)stat->st_size + 1);
     uv_args->bufs = uv_buf_init(uv_args->buffer, (unsigned int)stat->st_size);
 
-    args = (values_t *)co_new_by(2, sizeof(values_t));
-    args[0].value.integer = fd;
-    args[1].value.u_int = (unsigned int)offset;
+    uv_args->args[0].value.integer = fd;
+    uv_args->args[1].value.u_int = (unsigned int)offset;
 
-    return fs_start(uv_args, args, UV_FS_READ, 2, false).char_ptr;
+    return fs_start(uv_args, UV_FS_READ, 2, false).char_ptr;
 }
 
 int fs_write(uv_file fd, string_t text, int64_t offset) {
     size_t size = sizeof(text) + 1;
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(2, true);
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     uv_args->buffer = co_new_by(1, size);
     memcpy(uv_args->buffer, text, size);
     uv_args->bufs = uv_buf_init(uv_args->buffer, (unsigned int)size);
 
-    args = (values_t *)co_new_by(2, sizeof(values_t));
-    args[0].value.integer = fd;
-    args[1].value.u_int = (unsigned int)offset;
+    uv_args->args[0].value.integer = fd;
+    uv_args->args[1].value.u_int = (unsigned int)offset;
 
-    return fs_start(uv_args, args, UV_FS_WRITE, 2, false).integer;
+    return fs_start(uv_args, UV_FS_WRITE, 2, false).integer;
 }
 
 int fs_close(uv_file fd) {
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(1, true);
+    uv_args->args[0].value.integer = fd;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    args = (values_t *)co_new_by(1, sizeof(values_t));
-
-    args[0].value.integer = fd;
-    return fs_start(uv_args, args, UV_FS_CLOSE, 1, false).integer;
+    return fs_start(uv_args, UV_FS_CLOSE, 1, false).integer;
 }
 
 string fs_readfile(string_t path) {
@@ -796,32 +787,29 @@ int stream_write(uv_stream_t *handle, string_t text) {
         return -1;
 
     size_t size = strlen(text) + 1;
-    uv_args_t *uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
+    uv_args_t *uv_args = uv_arguments(1, false);
     uv_args->buffer = co_new_by(1, size);
     memcpy(uv_args->buffer, text, size);
     uv_args->bufs = uv_buf_init(uv_args->buffer, (unsigned int)size);
-
-    values_t *args = (values_t *)co_new_by(1, sizeof(values_t));
-    args[0].value.object = handle;
+    uv_args->args[0].value.object = handle;
 
     if (is_tls((uv_handle_t *)handle))
         uv_args->bind_type = UV_TLS;
 
-    return uv_start(uv_args, args, UV_WRITE, 1, true).integer;
+    return uv_start(uv_args, UV_WRITE, 1, true).integer;
 }
 
 string stream_read(uv_stream_t *handle) {
     if (is_empty(handle))
         return NULL;
 
-    uv_args_t *uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    values_t *args = (values_t *)co_new_by(1, sizeof(values_t));
-    args[0].value.object = handle;
+    uv_args_t *uv_args = uv_arguments(1, true);
+    uv_args->args[0].value.object = handle;
 
     if (is_tls((uv_handle_t *)handle))
         uv_args->bind_type = UV_TLS;
 
-    return uv_start(uv_args, args, UV_STREAM, 1, false).char_ptr;
+    return uv_start(uv_args, UV_STREAM, 1, false).char_ptr;
 }
 
 uv_stream_t *stream_connect(string_t address) {
@@ -836,8 +824,7 @@ uv_stream_t *stream_connect(string_t address) {
 }
 
 uv_stream_t *stream_connect_ex(uv_handle_type scheme, string_t address, int port) {
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(4, true);
     void_t addr_set = NULL;
     void_t handle = NULL;
     char name[UV_MAXHOSTNAMESIZE] = CERTIFICATE;
@@ -846,7 +833,6 @@ uv_stream_t *stream_connect_ex(uv_handle_type scheme, string_t address, int port
     size_t len = sizeof(name);
     int r = 0;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
     uv_args->type = ZE_EVENT_ARG;
     if (is_str_in(address, ":")) {
         r = uv_ip6_addr(address, port, (struct sockaddr_in6 *)uv_args->in6);
@@ -894,13 +880,12 @@ uv_stream_t *stream_connect_ex(uv_handle_type scheme, string_t address, int port
             break;
     }
 
-    args = (values_t *)co_new_by(4, sizeof(values_t));
-    args[0].value.object = handle;
-    args[1].value.object = addr_set;
-    args[2].value.integer = scheme;
-    args[3].value.char_ptr = (string)address;
+    uv_args->args[0].value.object = handle;
+    uv_args->args[1].value.object = addr_set;
+    uv_args->args[2].value.integer = scheme;
+    uv_args->args[3].value.char_ptr = (string)address;
 
-    return (uv_stream_t *)uv_start(uv_args, args, UV_CONNECT, 4, true).object;
+    return (uv_stream_t *)uv_start(uv_args, UV_CONNECT, 4, true).object;
 }
 
 uv_stream_t *stream_listen(uv_stream_t *stream, int backlog) {
@@ -915,11 +900,10 @@ uv_stream_t *stream_listen(uv_stream_t *stream, int backlog) {
         uv_args = (uv_args_t *)((evt_ctx_t *)check)->data;
     }
 
-    values_t *args = uv_args->args;
-    args[0].value.object = stream;
-    args[1].value.integer = backlog;
+    uv_args->args[0].value.object = stream;
+    uv_args->args[1].value.integer = backlog;
 
-    value_t handle = uv_start(uv_args, args, UV_SERVER_LISTEN, 5, false);
+    value_t handle = uv_start(uv_args, UV_SERVER_LISTEN, 5, false);
     if (is_empty(handle.object))
         return NULL;
 
@@ -945,7 +929,7 @@ uv_stream_t *stream_bind_ex(uv_handle_type scheme, string_t address, int port, i
     char key[UV_MAXHOSTNAMESIZE];
     size_t len = sizeof(name);
 
-    uv_args_t *uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
+    uv_args_t *uv_args = uv_arguments(5, true);
     uv_args->type = ZE_EVENT_ARG;
     co_defer_recover(error_catch, uv_args);
     if (is_str_in(address, ":")) {
@@ -995,15 +979,12 @@ uv_stream_t *stream_bind_ex(uv_handle_type scheme, string_t address, int port, i
         return uv_error_post(co_active(), r);
     }
 
-    values_t *args = (values_t *)co_new_by(5, sizeof(values_t));
-
-    args[0].value.object = handle;
-    args[2].value.object = addr_set;
-    args[3].value.char_ptr = (string)address;
-    args[4].value.integer = port;
+    uv_args->args[0].value.object = handle;
+    uv_args->args[2].value.object = addr_set;
+    uv_args->args[3].value.char_ptr = (string)address;
+    uv_args->args[4].value.integer = port;
 
     uv_args->bind_type = scheme;
-    uv_args->args = args;
     if (scheme == UV_TLS)
         uv_args->ctx.data = (void_t)uv_args;
     else
@@ -1017,14 +998,10 @@ void coro_uv_close(uv_handle_t *handle) {
     if (is_empty(handle))
         return;
 
-    values_t *args = NULL;
-    uv_args_t *uv_args = NULL;
+    uv_args_t *uv_args = uv_arguments(1, true);
+    uv_args->args[0].value.object = handle;
 
-    uv_args = (uv_args_t *)co_new_by(1, sizeof(uv_args_t));
-    args = (values_t *)co_new_by(1, sizeof(values_t));
-    args[0].value.object = handle;
-
-    uv_start(uv_args, args, UV_HANDLE, 1, false);
+    uv_start(uv_args, UV_HANDLE, 1, false);
 }
 
 uv_udp_t *udp_create() {
@@ -1076,4 +1053,236 @@ uv_tcp_t *tls_tcp_create(void_t extra) {
     }
 
     return tcp;
+}
+
+static void spawn_free(spawn_t *child) {
+    uv_handle_t *handle = (uv_handle_t *)&child->process;
+
+    ZE_FREE(child->handle);
+    ZE_FREE(child);
+
+    if (uv_is_active(handle) || !uv_is_closing(handle))
+        uv_close(handle, NULL);
+}
+
+static void exit_cb(uv_process_t *handle, int64_t exit_status, int term_signal) {
+    spawn_t *child = (spawn_t *)uv_handle_get_data((uv_handle_t *)handle);
+    routine_t *co = (routine_t *)child->handle->data;
+
+    if (!is_empty(child->handle->exiting_cb)) {
+        co->user_data = (void_t)child->handle->exiting_cb;
+        co->loop_code = (signed int)exit_status;
+        co->results = &term_signal;
+    }
+
+    co->halt = true;
+    co_switch(co);
+    co_scheduler();
+}
+
+static void_t stdio_handler(void_t uv_args) {
+    uv_args_t *uv = (uv_args_t *)uv_args;
+    values_t *args = uv->args;
+    spawn_t *child = var_cast(spawn_t, args[0]);
+    stdio_cb std = (stdio_cb)var_func(args[1]);
+    uv_stream_t *io = var_cast(uv_stream_t, args[2]);
+    routine_t *co = (routine_t *)child->handle->data;
+
+    uv_arguments_free(uv);
+
+    while (true) {
+        if (co_terminated(co))
+            break;
+
+        string data = stream_read(io);
+        if (!is_str_empty(data))
+            std((string_t)data);
+    }
+
+    return NULL;
+}
+
+static void spawning(void_t uv_args) {
+    uv_args_t *uv = (uv_args_t *)uv_args;
+    values_t *args = uv->args;
+    spawn_t *child = var_cast(spawn_t, args[0]);
+    spawn_cb exiting_cb;
+    routine_t *co = co_active();
+
+    uv_handle_set_data((uv_handle_t *)&child->process, (void_t)child);
+    co->loop_code = uv_spawn(co_loop(), child->process, child->handle->options);
+    defer(spawn_free, child);
+    if (!is_empty(child->handle->data))
+        ZE_FREE(child->handle->data);
+
+    child->handle->data = (void_t)co;
+    ZE_FREE(var_ptr(args[1]));
+    uv_arguments_free(uv);
+
+    if (!co->loop_code) {
+        while (true) {
+            if (!co_terminated(co)) {
+                coroutine_yield();
+            } else {
+                if (!is_empty(co->user_data)) {
+                    exiting_cb = (spawn_cb)co->user_data;
+                    exiting_cb(co->loop_code, co_value(co->results).integer);
+                }
+
+                break;
+            }
+        }
+    } else {
+        ZE_INFO("Process launch failed with: %s\n", uv_strerror(co->loop_code));
+    }
+}
+
+uv_stdio_container_t *stdio_fd(int fd, int flags) {
+    uv_stdio_container_t *stdio = try_calloc(1, sizeof(uv_stdio_container_t));
+    stdio->flags = flags;
+    stdio->data.fd = fd;
+
+    return stdio;
+}
+
+uv_stdio_container_t *stdio_stream(void_t handle, int flags) {
+    uv_stdio_container_t *stdio = try_calloc(1, sizeof(uv_stdio_container_t));
+    stdio->flags = flags;
+    stdio->data.stream = (uv_stream_t *)handle;
+
+    return stdio;
+}
+
+spawn_options_t *spawn_opts(string env, string_t cwd, int flags, uv_uid_t uid, uv_gid_t gid, int no_of_stdio, ...) {
+    spawn_options_t *handle = try_calloc(1, sizeof(spawn_options_t));
+    uv_stdio_container_t *p;
+    va_list argp;
+
+    handle->data = !is_empty(env) ? str_split(env, ";", NULL) : NULL;
+    handle->exiting_cb = NULL;
+    handle->options->env = handle->data;
+    handle->options->cwd = cwd;
+    handle->options->flags = flags;
+    handle->options->exit_cb = (flags == UV_PROCESS_DETACHED) ? NULL : exit_cb;
+    handle->stdio_count = no_of_stdio;
+
+#ifdef _WIN32
+    handle->options->uid = 0;
+    handle->options->gid = 0;
+#else
+    handle->options->uid = uid;
+    handle->options->gid = gid;
+#endif
+
+    if (no_of_stdio > 0) {
+        va_start(argp, no_of_stdio);
+        for (int i = 0; i < no_of_stdio; i++) {
+            p = va_arg(argp, uv_stdio_container_t *);
+            memcpy(&handle->stdio[i], p, sizeof(uv_stdio_container_t));
+            ZE_FREE(p);
+        }
+        va_end(argp);
+    }
+
+    handle->options->stdio = (uv_stdio_container_t *)&handle->stdio;
+    handle->options->stdio_count = handle->stdio_count;
+
+    return handle;
+}
+
+spawn_t *spawn(const char *command, const char *args, spawn_options_t *handle) {
+    spawn_t *process = try_calloc(1, sizeof(spawn_t));
+    int has_args = 3;
+
+    if (is_empty(handle)) {
+        handle = spawn_opts(NULL, NULL, 0, 0, 0, 0);
+    }
+
+    handle->options->file = command;
+    if (is_empty((void_t)args))
+        has_args = 2;
+
+    string command_arg = str_concat_by(has_args, command, ",", args);
+    string *command_args = str_split(command_arg, ",", NULL);
+    ZE_FREE(command_arg);
+    handle->options->args = command_args;
+
+    process->type = ZE_PROCESS;
+    process->handle = handle;
+    process->is_detach = false;
+
+    uv_args_t *uv_args = uv_arguments(2, false);
+    uv_args->args[0].value.object = process;
+    uv_args->args[1].value.object = command_args;
+    co_process(spawning, uv_args);
+
+    return process;
+}
+
+ZE_FORCE_INLINE int spawn_signal(spawn_t *handle, int sig) {
+    return uv_process_kill(&handle->process[0], sig);
+}
+
+ZE_FORCE_INLINE void spawn_detach(spawn_t *child) {
+    if (child->handle->options->flags == UV_PROCESS_DETACHED && !child->is_detach) {
+        uv_unref((uv_handle_t *)&child->process);
+        child->is_detach = true;
+        --coroutine_count;
+    }
+}
+
+ZE_FORCE_INLINE int spawn_exit(spawn_t *child, spawn_cb exit_func) {
+    child->handle->exiting_cb = exit_func;
+    co_pause();
+
+    return ((routine_t *)child->handle->data)->loop_code;
+}
+
+int spawn_in(spawn_t *child, stdin_cb std_func) {
+    uv_args_t *uv_args = uv_arguments(3, false);
+
+    uv_args->args[0].value.object = child;
+    uv_args->args[1].value.func = (callable_t)std_func;
+    uv_args->args[2].value.object = ipc_in(child);
+    co_go(stdio_handler, uv_args);
+
+    return ((routine_t *)child->handle->data)->loop_code;
+}
+
+int spawn_out(spawn_t *child, stdout_cb std_func) {
+    uv_args_t *uv_args = uv_arguments(3, false);
+
+    uv_args->args[0].value.object = child;
+    uv_args->args[1].value.func = (callable_t)std_func;
+    uv_args->args[2].value.object = ipc_out(child);
+    co_go(stdio_handler, uv_args);
+
+    return ((routine_t *)child->handle->data)->loop_code;
+}
+
+int spawn_err(spawn_t *child, stderr_cb std_func) {
+    uv_args_t *uv_args = uv_arguments(3, false);
+
+    uv_args->args[0].value.object = child;
+    uv_args->args[1].value.func = (callable_t)std_func;
+    uv_args->args[2].value.object = ipc_err(child);
+    co_go(stdio_handler, uv_args);
+
+    return ((routine_t *)child->handle->data)->loop_code;
+}
+
+ZE_FORCE_INLINE int spawn_pid(spawn_t *child) {
+    return child->process->pid;
+}
+
+ZE_FORCE_INLINE uv_stream_t *ipc_in(spawn_t *_in) {
+    return _in->handle->stdio[0].data.stream;
+}
+
+ZE_FORCE_INLINE uv_stream_t *ipc_out(spawn_t *out) {
+    return out->handle->stdio[1].data.stream;
+}
+
+ZE_FORCE_INLINE uv_stream_t *ipc_err(spawn_t *err) {
+    return err->handle->stdio[2].data.stream;
 }
