@@ -583,7 +583,7 @@ typedef union
     char **array;
     void_t object;
     callable_t func;
-    const char str[512];
+    const char const_char[512];
 } value_t;
 
 typedef struct values_s
@@ -709,12 +709,14 @@ C_API void args_free(args_t *params);
 * Use `get_args()` or `args_in()` for retrieval.
 *
 * @param desc format, similar to `printf()`:
-* - `i` integer
-* - `c` character
-* - `s` string
-* - `x` function
-* - `f` double/float
-* - `p` void pointer for any arbitrary object
+* * `i` unsigned integer,
+* * `d` signed integer,
+* * `c` character,
+* * `s` string,
+* * `a` array,
+* * `x` function,
+* * `f` double/float,
+* * `p` void pointer for any arbitrary object
 * @param arguments indexed by `desc` format order
 */
 C_API args_t *args_for(string_t desc, ...);
@@ -879,8 +881,8 @@ C_API unsigned int co_id(void);
 
 C_API signed int co_err_code(void);
 
-/* Pause and reschedule current coroutine. */
-C_API void co_pause(void);
+/* Yield execution to another coroutine and reschedule current. */
+C_API void co_yield(void);
 
 /* Returns the current coroutine's name. */
 C_API string co_get_name(void);

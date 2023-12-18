@@ -6,8 +6,11 @@ static void_t uv_init(void_t);
 thread_local uv_args_t *uv_server_args = NULL;
 
 static void uv_arguments_free(uv_args_t *uv_args) {
-    ZE_FREE(uv_args->args);
-    ZE_FREE(uv_args);
+    if (is_type(uv_args, ZE_EVENT_ARG)) {
+        ZE_FREE(uv_args->args);
+        memset(uv_args, 0, sizeof(value_types));
+        ZE_FREE(uv_args);
+    }
 }
 
 static uv_args_t *uv_arguments(int count, bool auto_free) {
@@ -21,6 +24,7 @@ static uv_args_t *uv_arguments(int count, bool auto_free) {
         params = (values_t *)try_calloc(count, sizeof(values_t));
     }
 
+    uv_args->type = ZE_EVENT_ARG;
     uv_args->args = params;
     return uv_args;
 }
@@ -79,7 +83,6 @@ void coroutine_event_cleanup(void_t t) {
 }
 
 static value_t fs_start(uv_args_t *uv_args, uv_fs_type fs_type, size_t n_args, bool is_path) {
-    uv_args->type = ZE_EVENT_ARG;
     uv_args->fs_type = fs_type;
     uv_args->n_args = n_args;
     uv_args->is_path = is_path;
@@ -88,7 +91,6 @@ static value_t fs_start(uv_args_t *uv_args, uv_fs_type fs_type, size_t n_args, b
 }
 
 static value_t uv_start(uv_args_t *uv_args, int type, size_t n_args, bool is_request) {
-    uv_args->type = ZE_EVENT_ARG;
     uv_args->is_request = is_request;
     if (is_request)
         uv_args->req_type = type;
@@ -582,7 +584,7 @@ static void_t uv_init(void_t uv_args) {
                 switch (scheme) {
                     case UV_NAMED_PIPE:
                         uv->handle_type = UV_NAMED_PIPE;
-                        uv_pipe_connect((uv_connect_t *)req, (uv_pipe_t *)stream, var_const_char_512(args[3]), connect_cb);
+                        uv_pipe_connect((uv_connect_t *)req, (uv_pipe_t *)stream, var_const_char(args[3]), connect_cb);
                         result = 0;
                         break;
                     case UV_TLS:
@@ -833,7 +835,6 @@ uv_stream_t *stream_connect_ex(uv_handle_type scheme, string_t address, int port
     size_t len = sizeof(name);
     int r = 0;
 
-    uv_args->type = ZE_EVENT_ARG;
     if (is_str_in(address, ":")) {
         r = uv_ip6_addr(address, port, (struct sockaddr_in6 *)uv_args->in6);
         addr_set = uv_args->in6;
@@ -930,7 +931,6 @@ uv_stream_t *stream_bind_ex(uv_handle_type scheme, string_t address, int port, i
     size_t len = sizeof(name);
 
     uv_args_t *uv_args = uv_arguments(5, true);
-    uv_args->type = ZE_EVENT_ARG;
     co_defer_recover(error_catch, uv_args);
     if (is_str_in(address, ":")) {
         r = uv_ip6_addr(address, port, (struct sockaddr_in6 *)uv_args->in6);
@@ -1195,7 +1195,10 @@ spawn_t *spawn(const char *command, const char *args, spawn_options_t *handle) {
     int has_args = 3;
 
     if (is_empty(handle)) {
-        handle = spawn_opts(NULL, NULL, 0, 0, 0, 0);
+        handle = spawn_opts(NULL, NULL, 0, 0, 0, 3,
+                            stdio_fd(0, UV_IGNORE),
+                            stdio_fd(1, UV_IGNORE),
+                            stdio_fd(2, UV_INHERIT_FD));
     }
 
     handle->options->file = command;
@@ -1223,17 +1226,20 @@ ZE_FORCE_INLINE int spawn_signal(spawn_t *handle, int sig) {
     return uv_process_kill(&handle->process[0], sig);
 }
 
-ZE_FORCE_INLINE void spawn_detach(spawn_t *child) {
+int spawn_detach(spawn_t *child) {
     if (child->handle->options->flags == UV_PROCESS_DETACHED && !child->is_detach) {
         uv_unref((uv_handle_t *)&child->process);
         child->is_detach = true;
         --coroutine_count;
+        co_yield();
     }
+
+    return ((routine_t *)child->handle->data)->loop_code;
 }
 
-ZE_FORCE_INLINE int spawn_exit(spawn_t *child, spawn_cb exit_func) {
+int spawn_exit(spawn_t *child, spawn_cb exit_func) {
     child->handle->exiting_cb = exit_func;
-    co_pause();
+    co_yield();
 
     return ((routine_t *)child->handle->data)->loop_code;
 }

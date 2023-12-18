@@ -15,9 +15,7 @@ value_t get_args(void_t *params, int item) {
         co_args->defer_set = true;
     }
 
-    return (item > -1 && item < co_args->n_args)
-        ? co_args->args[item].value
-        : ((generics_t *)0)->value;
+    return args_in(co_args, item);
 }
 
 ZE_FORCE_INLINE value_t args_in(args_t *params, int index) {
@@ -36,8 +34,12 @@ args_t *args_for(string_t desc, ...) {
     for (int i = 0; i < count; i++) {
         switch (*desc++) {
             case 'i':
-                // integer argument
+                // unsigned integer argument
                 args[i].value.max_size = va_arg(argp, size_t);
+                break;
+            case 'd':
+                // signed integer argument
+                args[i].value.long_long = va_arg(argp, int64_t);
                 break;
             case 'c':
                 // character argument
@@ -46,6 +48,10 @@ args_t *args_for(string_t desc, ...) {
             case 's':
                 // string argument
                 args[i].value.char_ptr = va_arg(argp, char *);
+                break;
+            case 'a':
+                // array argument
+                args[i].value.array = va_arg(argp, char **);
                 break;
             case 'x':
                 // executable argument
@@ -60,9 +66,10 @@ args_t *args_for(string_t desc, ...) {
                 args[i].value.object = va_arg(argp, void_t);
                 break;
             default:
+                args[i].value.object = NULL;
                 break;
+        }
     }
-}
     va_end(argp);
 
     params->type = ZE_ARGS;
@@ -136,7 +143,7 @@ void println(int n_of_args, ...) {
                 );
             }
         } else {
-            printf("%s ", co_value(list).str);
+            printf("%s ", co_value(list).const_char);
         }
     }
     va_end(argp);
@@ -167,9 +174,6 @@ void co_delete(routine_t *co) {
         } else {
             if (co->err_allocated)
                 ZE_FREE(co->err_allocated);
-
-            //if (co->results && !co->event_active && !co->is_address && !co->is_plain)
-                //ZE_FREE(co->results);
 
             ZE_FREE(co);
         }
@@ -298,7 +302,7 @@ wait_result_t *co_wait(wait_group_t *wg) {
     routine_t *co;
     bool has_erred = false;
     if (c->wait_active && (memcmp(c->wait_group, wg, sizeof(wg)) == 0)) {
-        co_pause();
+        co_yield();
         wgr = ht_result_init();
         co_deferred(c, FUNC_VOID(hash_free), wgr);
         oa_pair *pair;
@@ -316,10 +320,10 @@ wait_result_t *co_wait(wait_group_t *wg) {
                         } else {
                             if (!is_empty(co->results) && !co->loop_erred) {
                                 hash_put(wgr, co_itoa(co->cid), (co->is_address ? &co->results : co->results));
-                                if (!co->event_active && !co->is_plain && !co->is_address)
+                                if (!co->event_active && !co->is_plain && !co->is_address) {
                                     ZE_FREE(co->results);
-
-                                //co->results = NULL;
+                                    co->results = NULL;
+                                }
                             }
 
                             if (co->loop_erred) {

@@ -3,7 +3,8 @@
 
 #include <ctype.h>
 #include "uv_tls.h"
-#include "compat/yyjson.h"
+#include "compat/parson.h"
+#include <stdbool.h>
 
 /* Public API qualifier. */
 #ifndef C_API
@@ -11,6 +12,27 @@
 #endif
 
 #define STREAM(handle) ((uv_stream_t *)handle)
+
+#define var_int(arg) (arg).value.integer
+#define var_long(arg) (arg).value.s_long
+#define var_long_long(arg) (arg).value.long_long
+#define var_unsigned_int(arg) (arg).value.u_int
+#define var_unsigned_long(arg) (arg).value.u_long
+#define var_size_t(arg) (arg).value.max_size
+#define var_const_char(arg) (arg).value.const_char
+#define var_char(arg) (arg).value.schar
+#define var_char_ptr(arg) (arg).value.char_ptr
+#define var_bool(arg) (arg).value.boolean
+#define var_float(arg) (arg).value.point
+#define var_double(arg) (arg).value.precision
+#define var_unsigned_char(arg) (arg).value.uchar
+#define var_char_array(arg) (arg).value.array
+#define var_unsigned_char_ptr(arg) (arg).value.uchar_ptr
+#define var_signed_short(arg) (arg).value.s_short
+#define var_unsigned_short(arg) (arg).value.u_short
+#define var_ptr(arg) (arg).value.object
+#define var_func(arg) (arg).value.func
+#define var_cast(type, arg) (type *)(arg).value.object
 
 #ifdef __cplusplus
 extern "C"
@@ -143,10 +165,9 @@ C_API spawn_options_t *spawn_opts(char *env, const char *cwd, int flags, uv_uid_
  * specified, or not having enough memory to allocate for the new process.
  *
  * @param command Program to be executed.
- * @param args Command line arguments, separate with comma like:
- * `"arg1,arg2,arg3,...,"` MUST END with comma `","`.
- *
+ * @param args Command line arguments, separate with comma like: `"arg1,arg2,arg3,..."`
  * @param options Use `spawn_opts()` function to produce `uv_stdio_container_t` and `uv_process_options_t` options.
+ * If `NULL` defaults `stderr` of subprocess to parent.
  */
 C_API spawn_t *spawn(const char *command, const char *args, spawn_options_t *options);
 C_API int spawn_exit(spawn_t *, spawn_cb exit_func);
@@ -155,7 +176,7 @@ C_API int spawn_out(spawn_t *, stdout_cb std_func);
 C_API int spawn_err(spawn_t *, stderr_cb std_func);
 C_API int spawn_pid(spawn_t *child);
 C_API int spawn_signal(spawn_t *, int sig);
-C_API void spawn_detach(spawn_t *);
+C_API int spawn_detach(spawn_t *);
 C_API uv_stream_t *ipc_in(spawn_t *in);
 C_API uv_stream_t *ipc_out(spawn_t *out);
 C_API uv_stream_t *ipc_err(spawn_t *err);
@@ -339,7 +360,7 @@ typedef unsigned short mode_t;
 
 typedef struct fileinfo_s {
     const char *dirname;
-    const char *_basename;
+    const char *base;
     const char *extension;
     const char *filename;
 } fileinfo_t;

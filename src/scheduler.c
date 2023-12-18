@@ -975,6 +975,7 @@ int coroutine_create(callable_t fn, void_t arg, unsigned int stack) {
         c->event_active = false;
     } else if (c->wait_active && !is_empty(c->wait_group)) {
         t->synced = true;
+        t->is_address = true;
         hash_put(c->wait_group, co_itoa(id), t);
         c->wait_counter++;
     }
@@ -992,14 +993,14 @@ ZE_FORCE_INLINE int co_go(callable_t fn, void_t arg) {
     return coroutine_create(fn, arg, ZE_STACK_SIZE);
 }
 
-void co_pause() {
+void co_yield() {
     coroutine_schedule(co_running);
     co_suspend();
 }
 
 ZE_FORCE_INLINE void co_execute(func_t fn, void_t arg) {
     coroutine_create((callable_t)fn, arg, ZE_STACK_SIZE);
-    co_pause();
+    co_yield();
 }
 
 static size_t nsec(void) {
@@ -1170,7 +1171,7 @@ void coroutine_info() {
         else
             extra = "";
 
-        fprintf(stderr, "%6d%c %-20s %s%s %d\n", t->cid, t->system ? 's' : ' ', t->name, t->state, extra, t->status);
+        fprintf(stderr, "%6d%c %-20s %s%s cycles: %zu %d\n", t->cid, t->system ? 's' : ' ', t->name, t->state, extra, t->cycles, t->status);
     }
 }
 
@@ -1179,7 +1180,6 @@ void coroutine_update(routine_t *t) {
     all_coroutine[i] = all_coroutine[--n_all_coroutine];
     all_coroutine[i]->all_coroutine_slot = i;
 }
-
 
 void coroutine_cleanup() {
     routine_t *t;
@@ -1235,6 +1235,7 @@ static void coroutine_scheduler(void) {
         t = co_run_queue.head;
         coroutine_remove(&co_run_queue, t);
         t->ready = 0;
+        t->cycles++;
         co_running = t;
         n_co_switched++;
         if (scheduler_info_log)
@@ -1243,7 +1244,6 @@ static void coroutine_scheduler(void) {
 
         coroutine_interrupt();
         if (!is_status_invalid(t) && !t->halt) {
-            t->cycles++;
             co_switch(t);
         }
 
