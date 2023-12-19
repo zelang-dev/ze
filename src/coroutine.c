@@ -89,6 +89,8 @@ void delete(void_t ptr) {
             ((object_t *)ptr)->dtor(ptr);
         or (ZE_OA_HASH)
             hash_free(ptr);
+        or (ZE_ARGS)
+            args_free(ptr);
         otherwise{
             if (is_valid(ptr))
                 ZE_FREE(ptr);
