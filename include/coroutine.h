@@ -38,6 +38,7 @@
 #endif
 
 #include <time.h>
+#include "compat/parson.h"
 
 #if defined(_MSC_VER)
     #define ZE_MPROTECT 1
@@ -386,6 +387,7 @@ typedef struct routine_s routine_t;
 typedef struct oa_hash_s hash_t;
 typedef struct ex_ptr_s ex_ptr_t;
 typedef struct ex_context_s ex_context_t;
+typedef struct json_value_t json_t;
 typedef hash_t ht_string_t;
 typedef hash_t wait_group_t;
 typedef hash_t wait_result_t;
@@ -844,6 +846,14 @@ C_API u_string base64_encode(u_string_t src);
 C_API u_string base64_decode(u_string_t src);
 
 C_API int co_array_init(co_array_t *);
+
+C_API bool is_json(json_t *schema);
+C_API string json_serialize(json_t *json, bool is_pretty);
+C_API json_t *json_parse(string_t text);
+C_API json_t *json_read(string_t filename);
+C_API int json_write(string_t filename, string_t text);
+C_API json_t *json_encode(string_t desc, ...);
+C_API string json_for(string_t desc, ...);
 
 /* Creates an unbuffered channel, similar to golang channels. */
 C_API channel_t *channel(void);

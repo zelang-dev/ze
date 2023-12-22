@@ -1280,6 +1280,7 @@ int main(int argc, char **argv) {
     ZE_INFO("System starting up: %s\n\n", co_system_uname());
 #endif
     ex_signal_setup();
+    json_set_allocation_functions(try_malloc, ZE_FREE);
     coroutine_create(coroutine_main, NULL, ZE_MAIN_STACK);
     coroutine_scheduler();
     fprintf(stderr, "Coroutine scheduler returned to main, when it shouldn't have!");

@@ -774,7 +774,19 @@ string fs_readfile(string_t path) {
         return file;
     }
 
-    return (string)0;
+    return NULL;
+}
+
+int fs_write_file(string_t path, string_t text) {
+    int status;
+    uv_file fd = fs_open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+    if (fd) {
+        status = fs_write(fd, text, 0);
+        if (!fs_close(fd))
+            return status;
+    }
+
+    return co_err_code();
 }
 
 void stream_handler(void (*connected)(uv_stream_t *), uv_stream_t *client) {
