@@ -22,16 +22,19 @@ ZE_FORCE_INLINE int json_write(string_t filename, string_t text) {
     return fs_write_file(filename, text);
 }
 
-ZE_FORCE_INLINE json_t *json_parse(string_t text) {
-    return json_parse_string(text);
+ZE_FORCE_INLINE json_t *json_decode(string_t text, bool is_commented) {
+    if (is_commented)
+        return json_parse_string_with_comments(text);
+    else
+        return json_parse_string(text);
 }
 
-json_t *json_read(string_t filename) {
+json_t *json_read(string_t filename, bool is_commented) {
     string file_contents = fs_readfile(filename);
     if (is_empty(file_contents))
         return NULL;
 
-    return json_parse(file_contents);
+    return json_decode(file_contents, is_commented);
 }
 
 json_t *json_encode(string_t desc, ...) {
@@ -44,7 +47,7 @@ json_t *json_encode(string_t desc, ...) {
     string key, value_char;
     int value_bool;
     JSON_Status status = JSONSuccess;
-    void_t value_any = NULL;
+    json_t *value_any = NULL;
     JSON_Array *value_array = NULL;
     double value_float = 0;
     int64_t value_int = 0;
@@ -53,6 +56,9 @@ json_t *json_encode(string_t desc, ...) {
 
     va_start(argp, desc);
     for (int i = 0; i < count; i++) {
+        if (status == JSONFailure)
+            return NULL;
+
         switch (*desc++) {
             case '.':
                 is_dot = true;
@@ -152,7 +158,7 @@ json_t *json_encode(string_t desc, ...) {
                 if (!is_array)
                     key = va_arg(argp, string);
 
-                value_any = va_arg(argp, void_t);
+                value_any = va_arg(argp, json_t *);
                 if (is_array)
                     status = json_array_append_value(value_array, value_any);
                 else if (is_dot)
@@ -181,7 +187,7 @@ string json_for(string_t desc, ...) {
     va_list argp;
     string value_char;
     int value_bool;
-    void_t value_any = NULL;
+    json_t *value_any = NULL;
     double value_float = 0;
     int64_t value_int = 0;
     size_t value_max = 0;
@@ -189,6 +195,9 @@ string json_for(string_t desc, ...) {
 
     va_start(argp, desc);
     for (int i = 0; i < count; i++) {
+        if (status == JSONFailure)
+            return NULL;
+
         switch (*desc++) {
             case 'n':
                 status = json_array_append_null(value_array);
@@ -225,7 +234,7 @@ string json_for(string_t desc, ...) {
                 status = json_array_append_string(value_array, value_char);
                 break;
             case 'v':
-                value_any = va_arg(argp, void_t);
+                value_any = va_arg(argp, json_t *);
                 status = json_array_append_value(value_array, value_any);
                 break;
             default:

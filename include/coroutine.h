@@ -847,12 +847,55 @@ C_API u_string base64_decode(u_string_t src);
 
 C_API int co_array_init(co_array_t *);
 
-C_API bool is_json(json_t *schema);
-C_API string json_serialize(json_t *json, bool is_pretty);
-C_API json_t *json_parse(string_t text);
-C_API json_t *json_read(string_t filename);
+/* Check if validated by json type */
+C_API bool is_json(json_t *);
+
+/**
+* @param value Serialization of value to string.
+* @param is_pretty Pretty serialization, if set `true`.
+*/
+C_API string json_serialize(json_t *, bool is_pretty);
+
+/**
+* @param text Parses first JSON value in a text, returns NULL in case of error.
+* @param is_commented Ignores comments (/ * * / and //), if set `true`.
+*/
+C_API json_t *json_decode(string_t, bool is_commented);
+
+C_API json_t *json_read(string_t filename, bool is_commented);
 C_API int json_write(string_t filename, string_t text);
+
+/**
+* Creates json value `object` using a format like `printf` for each value to key.
+*
+* @param desc format string:
+* * '`.`' indicate next format character will use dot function to record value for key name with dot,
+* * '`a`' begin array encoding, every item `value` will be appended, until '`e`' is place in format desc,
+* * '`e`' end array encoding,
+* * '`n`' record `null` value for key, *DO NOT PLACE `NULL` IN ARGUMENTS*,
+* * '`f`' record `float/double` number for key,
+* * '`d`' record `signed` number for key,
+* * '`i`' record `unsigned` number for key,
+* * '`b`' record `boolean` value for key,
+* * '`s`' record `string` value for key,
+* * '`v`' record `JSON_Value` for key,
+* @param arguments use `kv(key,value)` for pairs, *DO NOT PROVIDE FOR NULL, ONLY KEY*
+*/
 C_API json_t *json_encode(string_t desc, ...);
+
+/**
+* Creates json value string `array` using a format like `printf` for each value to index.
+*
+* @param desc format string:
+* * '`n`' record `null` value for index, *DO NOT PLACE `NULL` IN ARGUMENTS*,
+* * '`f`' record `float/double` number for index,
+* * '`d`' record `signed` number for index,
+* * '`i`' record `unsigned` number for index,
+* * '`b`' record `boolean` value for index,
+* * '`s`' record `string` value for index,
+* * '`v`' record `JSON_Value` for index,
+* @param arguments indexed by `desc` format order, *DO NOT PROVIDE FOR NULL*
+*/
 C_API string json_for(string_t desc, ...);
 
 /* Creates an unbuffered channel, similar to golang channels. */
