@@ -360,7 +360,7 @@ typedef unsigned short mode_t;
 
 typedef struct fileinfo_s {
     const char *dirname;
-    const char *base;
+    const char *_basename;
     const char *extension;
     const char *filename;
 } fileinfo_t;
