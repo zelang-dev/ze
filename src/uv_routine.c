@@ -1016,7 +1016,7 @@ void coro_uv_close(uv_handle_t *handle) {
     uv_start(uv_args, UV_HANDLE, 1, false);
 }
 
-uv_udp_t *udp_create() {
+uv_udp_t *udp_create(void) {
     uv_udp_t *udp = (uv_udp_t *)co_calloc_full(co_active(), 1, sizeof(uv_udp_t), uv_close_free);
     int r = uv_udp_init(co_loop(), udp);
     if (r) {
@@ -1036,7 +1036,7 @@ uv_pipe_t *pipe_create(bool is_ipc) {
     return pipe;
 }
 
-uv_tcp_t *tcp_create() {
+uv_tcp_t *tcp_create(void) {
     uv_tcp_t *tcp = (uv_tcp_t *)co_calloc_full(co_active(), 1, sizeof(uv_tcp_t), uv_close_free);
     int r = uv_tcp_init(co_loop(), tcp);
     if (r) {

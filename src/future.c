@@ -70,7 +70,7 @@ value_t co_async_get(future *f) {
     return r;
 }
 
-ZE_FORCE_INLINE unsigned long co_async_self() {
+ZE_FORCE_INLINE unsigned long co_async_self(void) {
 #ifdef _WIN32
     return (long)pthread_self().p;
 #else
@@ -105,7 +105,7 @@ void future_close(future *f) {
     ZE_FREE(f);
 }
 
-promise *promise_create() {
+promise *promise_create(void) {
     promise *p = try_calloc(1, sizeof(promise));
     p->result = try_calloc(1, sizeof(values_t));
     pthread_mutex_init(&p->mutex, NULL);

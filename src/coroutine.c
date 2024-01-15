@@ -213,7 +213,7 @@ value_t co_data(values_t *data) {
     return ((values_t *)0)->value;
 }
 
-ZE_FORCE_INLINE void co_suspend() {
+ZE_FORCE_INLINE void co_suspend(void) {
     co_yielding(co_current());
 }
 
@@ -385,18 +385,18 @@ struct tm *gmtime_r(const time_t *timer, struct tm *buf) {
 }
 #endif
 
-unsigned int co_id() {
+unsigned int co_id(void) {
     return co_active()->cid;
 }
 
-signed int co_err_code() {
+signed int co_err_code(void) {
     return co_active()->loop_code;
 }
 
-char *co_get_name() {
+char *co_get_name(void) {
     return co_active()->name;
 }
 
-char *co_get_state() {
+char *co_get_state(void) {
     return co_active()->state;
 }

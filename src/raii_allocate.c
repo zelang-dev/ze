@@ -15,20 +15,20 @@ void gc_channel(channel_t *ch) {
     hash_put(channel_list, co_itoa(ch->id), ch);
 }
 
-ZE_FORCE_INLINE gc_channel_t *gc_channel_list() {
+ZE_FORCE_INLINE gc_channel_t *gc_channel_list(void) {
     return channel_list;
 }
 
-ZE_FORCE_INLINE gc_coroutine_t *gc_coroutine_list() {
+ZE_FORCE_INLINE gc_coroutine_t *gc_coroutine_list(void) {
     return coroutine_list;
 }
 
-void gc_channel_free() {
+void gc_channel_free(void) {
     if (channel_list)
         hash_free(channel_list);
 }
 
-void gc_coroutine_free() {
+void gc_coroutine_free(void) {
     if (coroutine_list)
         hash_free(coroutine_list);
 }

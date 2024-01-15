@@ -250,7 +250,7 @@ ZE_FORCE_INLINE void co_defer_recover(func_t func, void_t data) {
     co_deferred_any(co_active(), func, data, (void_t)"err");
 }
 
-string_t co_recover() {
+string_t co_recover(void) {
     routine_t *co = co_active();
     co->err_recovered = true;
     return !is_empty((void_t)co->panic) ? co->panic : co->err;

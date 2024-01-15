@@ -19,7 +19,7 @@ channel_t *channel_create(int elem_size, int bufsize) {
     return c;
 }
 
-ZE_FORCE_INLINE channel_t *channel() {
+ZE_FORCE_INLINE channel_t *channel(void) {
     return channel_create(sizeof(values_t), 0);
 }
 

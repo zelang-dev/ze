@@ -107,7 +107,7 @@ C_API string co_system_uname(void) {
 }
 
 /* called only if routine_t func returns */
-static void co_done() {
+static void co_done(void) {
     if (!co_active()->loop_active) {
         co_active()->halt = true;
         co_active()->status = ZE_DEAD;
@@ -116,7 +116,7 @@ static void co_done() {
     co_scheduler();
 }
 
-static void co_awaitable() {
+static void co_awaitable(void) {
     routine_t *co = co_active();
     try {
         if (co->loop_active) {
@@ -144,7 +144,7 @@ static void co_awaitable() {
     } end_try;
 }
 
-static void co_func() {
+static void co_func(void) {
     co_awaitable();
     co_done(); /* called only if coroutine function returns */
 }
@@ -158,7 +158,7 @@ static ZE_FORCE_INLINE int co_deferred_array_init(defer_t *array) {
     return co_array_init((co_array_t *)array);
 }
 
-uv_loop_t *co_loop() {
+uv_loop_t *co_loop(void) {
     if (!is_empty(co_main_loop_handle))
         return co_main_loop_handle;
 
@@ -993,7 +993,7 @@ ZE_FORCE_INLINE int co_go(callable_t fn, void_t arg) {
     return coroutine_create(fn, arg, ZE_STACK_SIZE);
 }
 
-void co_yield() {
+void co_yield(void) {
     coroutine_schedule(co_running);
     co_suspend();
 }
@@ -1104,7 +1104,7 @@ void coroutine_schedule(routine_t *t) {
     coroutine_add(&co_run_queue, t);
 }
 
-int coroutine_yield() {
+int coroutine_yield(void) {
     int n;
     n = n_co_switched;
     coroutine_schedule(co_running);
@@ -1113,7 +1113,7 @@ int coroutine_yield() {
     return n_co_switched - n - 1;
 }
 
-bool coroutine_active() {
+bool coroutine_active(void) {
     return !is_empty(co_run_queue.head);
 }
 
@@ -1138,7 +1138,7 @@ void coroutine_name(char *fmt, ...) {
     va_end(args);
 }
 
-char *coroutine_get_state() {
+char *coroutine_get_state(void) {
     return co_active()->state;
 }
 
@@ -1156,7 +1156,7 @@ void coroutine_exit(int val) {
     co_scheduler();
 }
 
-void coroutine_info() {
+void coroutine_info(void) {
     int i;
     routine_t *t;
     char *extra;
@@ -1181,7 +1181,7 @@ void coroutine_update(routine_t *t) {
     all_coroutine[i]->all_coroutine_slot = i;
 }
 
-void coroutine_cleanup() {
+void coroutine_cleanup(void) {
     routine_t *t;
     gc_channel_free();
     gc_coroutine_free();

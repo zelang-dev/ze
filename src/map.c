@@ -100,7 +100,7 @@ map_t *map_new(map_value_dtor dtor) {
     return array;
 }
 
-map_t *map_long_init() {
+map_t *map_long_init(void) {
     map_t *array = (map_t *)try_calloc(1, sizeof(map_t));
     array->started = false;
     array->dtor = NULL;
@@ -109,7 +109,7 @@ map_t *map_long_init() {
     return array;
 }
 
-map_t *map_string_init() {
+map_t *map_string_init(void) {
     map_t *array = (map_t *)try_calloc(1, sizeof(map_t));
     array->started = false;
     array->dtor = NULL;
