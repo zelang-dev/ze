@@ -121,7 +121,7 @@ throws an exception of given message `issue`. */
 #define has_unsigned_int(arg) has_t((arg))->value.u_int
 #define has_unsigned_long(arg) has_t((arg))->value.u_long
 #define has_size_t(arg) has_t((arg))->value.max_size
-#define has_const_char_64(arg) has_t((arg))->value.const_char
+#define has_const_char_64(arg) has_t((arg))->value.str
 #define has_char(arg) has_t((arg))->value.schar
 #define has_char_ptr(arg) has_t((arg))->value.char_ptr
 #define has_bool(arg) has_t((arg))->value.boolean
