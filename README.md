@@ -1,4 +1,4 @@
-# ze is c
+# ze is c - All functionality has move into [c-raii](https://github.com/zelang-dev/c-raii) this repo is TBD
 
 [![windows & linux & macOS](https://github.com/zelang-dev/ze/actions/workflows/ci.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci.yml)[![macOS](https://github.com/zelang-dev/ze/actions/workflows/ci_macos.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci_macos.yml)[![armv7, aarch64, ppc64le](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu_others.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu_others.yml)[![riscv64 & s390x by ucontext  .](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu.yml/badge.svg)](https://github.com/zelang-dev/ze/actions/workflows/ci_qemu.yml)
 
